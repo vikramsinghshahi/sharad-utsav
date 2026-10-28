@@ -20,10 +20,10 @@ Check it works: `GET /api/health` should return `{"status":"ok","database":{"dri
 
 ## Environment variables
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | yes | Postgres connection string. A `*.neon.tech` host uses the Neon serverless driver; any other host uses node-postgres. |
-| `PORT` | no | Preferred port for `pnpm dev` / `pnpm start` (local only; Vercel ignores it). |
+| Variable       | Required | Purpose                                                                                                              |
+| -------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL` | yes      | Postgres connection string. A `*.neon.tech` host uses the Neon serverless driver; any other host uses node-postgres. |
+| `PORT`         | no       | Preferred port for `pnpm dev` / `pnpm start` (local only; Vercel ignores it).                                        |
 
 ## Using Neon
 

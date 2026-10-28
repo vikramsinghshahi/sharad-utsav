@@ -1,9 +1,13 @@
 import { z } from "zod";
+import { ageBandSchema } from "./age";
 
 // Rules are read from these structured fields, never from a product's display name.
 
-export const ageBandSchema = z.enum(["infant", "child", "adult"]);
-export type AgeBand = z.infer<typeof ageBandSchema>;
+export const PRODUCT_CATEGORIES = ["entry", "extra"] as const;
+export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+
+export const PRODUCT_PRICINGS = ["per_person_per_day", "flat", "per_unit"] as const;
+export type ProductPricing = (typeof PRODUCT_PRICINGS)[number];
 
 export const passRuleSchema = z.object({
   type: z.literal("pass"),

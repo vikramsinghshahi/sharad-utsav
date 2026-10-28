@@ -9,7 +9,9 @@ describe("resolveDriver", () => {
 
   it("uses the Neon serverless driver for Neon hosts", () => {
     expect(
-      resolveDriver("postgresql://u:p@ep-cool-name-123456.us-east-2.aws.neon.tech/db?sslmode=require"),
+      resolveDriver(
+        "postgresql://u:p@ep-cool-name-123456.us-east-2.aws.neon.tech/db?sslmode=require",
+      ),
     ).toBe("neon");
     expect(
       resolveDriver("postgresql://u:p@ep-cool-name-123456-pooler.us-east-2.aws.neon.tech/db"),

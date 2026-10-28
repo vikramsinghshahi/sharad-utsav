@@ -16,27 +16,24 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { ProductRule } from "@/domain/catalog";
+import { AGE_BANDS } from "@/domain/age";
+import { BOOKING_STATUSES, ENTRY_KINDS } from "@/domain/booking";
+import { PRODUCT_CATEGORIES, PRODUCT_PRICINGS, type ProductRule } from "@/domain/catalog";
+import { PROMO_KINDS } from "@/domain/promo";
 
 // Case-insensitive text (requires the citext extension; see the first migration).
 const citext = customType<{ data: string }>({ dataType: () => "citext" });
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
-// ---------- enums ----------
+// ---------- enums (values owned by the domain; changing one needs a migration) ----------
 
-export const productCategory = pgEnum("product_category", ["entry", "extra"]);
-export const productPricing = pgEnum("product_pricing", ["per_person_per_day", "flat", "per_unit"]);
-export const promoKind = pgEnum("promo_kind", ["percent", "fixed", "free_child_entry"]);
-export const bookingStatus = pgEnum("booking_status", [
-  "pending_payment",
-  "confirmed",
-  "expired",
-  "cancelled",
-  "refunded",
-]);
-export const ageBand = pgEnum("age_band", ["infant", "child", "adult"]);
-export const entryKind = pgEnum("entry_kind", ["none", "day_pass", "all_days", "family_pass"]);
+export const productCategory = pgEnum("product_category", PRODUCT_CATEGORIES);
+export const productPricing = pgEnum("product_pricing", PRODUCT_PRICINGS);
+export const promoKind = pgEnum("promo_kind", PROMO_KINDS);
+export const bookingStatus = pgEnum("booking_status", BOOKING_STATUSES);
+export const ageBand = pgEnum("age_band", AGE_BANDS);
+export const entryKind = pgEnum("entry_kind", ENTRY_KINDS);
 export const paymentProvider = pgEnum("payment_provider", ["simulated", "stripe"]);
 export const paymentStatus = pgEnum("payment_status", ["pending", "succeeded", "declined"]);
 
@@ -296,5 +293,9 @@ export const outbox = pgTable(
     processedAt: timestamp("processed_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index("outbox_unprocessed_idx").on(t.createdAt).where(sql`${t.processedAt} IS NULL`)],
+  (t) => [
+    index("outbox_unprocessed_idx")
+      .on(t.createdAt)
+      .where(sql`${t.processedAt} IS NULL`),
+  ],
 );

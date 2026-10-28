@@ -1,19 +1,15 @@
-import { sql } from "drizzle-orm";
-import { getDbHandle } from "@/infrastructure/db/client";
+import { pingDatabase } from "@/infrastructure/db/client";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
-// Liveness + DB connectivity check. Reports the driver in use, never the URL.
+// Liveness + DB connectivity check. Never exposes the connection URL.
 export async function GET() {
-  const { driver, db } = getDbHandle();
   try {
-    await db.execute(sql`select 1`);
-    return Response.json({ status: "ok", database: { driver, reachable: true } });
+    const database = await pingDatabase();
+    return Response.json({ status: "ok", database });
   } catch (error) {
-    console.error("Health check: database unreachable", error);
-    return Response.json(
-      { status: "degraded", database: { driver, reachable: false } },
-      { status: 503 },
-    );
+    logger.error("health.database_unreachable", { error });
+    return Response.json({ status: "degraded", database: { reachable: false } }, { status: 503 });
   }
 }

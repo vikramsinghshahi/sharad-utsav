@@ -1,9 +1,10 @@
 import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
+import { sql } from "drizzle-orm";
 import { drizzle as drizzleNeon, type NeonDatabase } from "drizzle-orm/neon-serverless";
 import { drizzle as drizzlePg, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool as PgPool } from "pg";
 import ws from "ws";
-import { env } from "@/lib/env";
+import { getEnv } from "@/lib/env";
 import { resolveDriver, type DbDriver } from "./driver";
 import * as schema from "./schema";
 
@@ -29,11 +30,22 @@ export function createDb(databaseUrl: string): DbHandle {
 // Reuse one pool across hot reloads in dev and across invocations of a warm function.
 const globalForDb = globalThis as typeof globalThis & { __sharadDb?: DbHandle };
 
-export function getDbHandle(): DbHandle {
-  globalForDb.__sharadDb ??= createDb(env.DATABASE_URL);
+function getDbHandle(): DbHandle {
+  globalForDb.__sharadDb ??= createDb(getEnv().DATABASE_URL);
   return globalForDb.__sharadDb;
 }
 
 export function getDb(): Db {
   return getDbHandle().db;
+}
+
+export interface DatabaseStatus {
+  driver: DbDriver;
+  reachable: boolean;
+}
+
+export async function pingDatabase(): Promise<DatabaseStatus> {
+  const { driver, db } = getDbHandle();
+  await db.execute(sql`select 1`);
+  return { driver, reachable: true };
 }
