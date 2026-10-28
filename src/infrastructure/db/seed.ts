@@ -1,10 +1,8 @@
 import { eq, sql } from "drizzle-orm";
 import { productRuleSchema } from "@/domain/catalog";
-import type { Db } from "./client";
+import type { Db, Tx } from "./client";
 import { eventDays, events, inventoryPools, organizations, products, promoCodes } from "./schema";
 import { EVENT, FESTIVAL_DATES, ORG_NAME, PRODUCTS, PROMOS, SAME_DAY_CUTOFF } from "./seed-data";
-
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 // Idempotent: re-running updates catalog fields but never resets remaining stock
 // or promo redemption counts, so it is safe against a live database.

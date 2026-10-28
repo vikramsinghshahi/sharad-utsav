@@ -1,8 +1,6 @@
 import { createDb, type DbHandle } from "@/infrastructure/db/client";
 import { getEnv } from "@/lib/env";
 
-export const MIGRATIONS_FOLDER = "src/infrastructure/db/migrations";
-
 // host/database only — never print credentials.
 export function describeDatabase(databaseUrl: string): string {
   const url = new URL(databaseUrl);

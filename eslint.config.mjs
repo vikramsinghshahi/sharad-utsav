@@ -45,8 +45,20 @@ const eslintConfig = [
   ),
   layer(
     ["src/application/**"],
-    ["@/app/*", "@/features/*", ...FRAMEWORK],
-    "application/ must not depend on the UI, routes, or the web framework.",
+    ["@/app/*", "@/features/*", "@/infrastructure/*", ...DB_DRIVERS, ...FRAMEWORK],
+    "application/ depends on its own ports (ports.ts); infrastructure implements them.",
+  ),
+  layer(
+    ["src/contracts/**"],
+    [
+      "@/app/*",
+      "@/application/*",
+      "@/infrastructure/*",
+      "@/features/*",
+      ...DB_DRIVERS,
+      ...FRAMEWORK,
+    ],
+    "contracts/ is shared with the browser: only zod and domain types.",
   ),
   layer(
     ["src/app/api/**"],

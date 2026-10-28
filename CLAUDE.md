@@ -4,23 +4,65 @@ Guidance for working in this repository.
 
 ## Current state (read first)
 
-**The P0 skeleton exists. Domain logic, the booking API, and the UI do not yet.**
+**P0–P2 are built: skeleton, domain rules, and the booking API (tested). The booking UI (P3) is not built yet.**
 
 - `docs/SPEC.md` — the working engineering spec. **This is the source of truth** for architecture, rules, API, schema, and the delivery plan.
 - `docs/assessment-senior-fullstack-ticketing.md` — the original brief.
+- `docs/DESIGN.md` — the user's own design note. **Read-only: never edit it.**
 
 Built so far:
 
 ```
 src/
-  app/                     # Next.js routes: page.tsx (placeholder), api/health/route.ts
-  domain/                  # pure TS, no I/O: age.ts, booking.ts, catalog.ts, promo.ts
-  infrastructure/db/       # schema.ts, client.ts (getDb, pingDatabase), driver.ts,
-                           # seed.ts (logic), seed-data.ts (festival data), migrations/
-  lib/                     # env.ts (getEnv, lazy + Zod), logger.ts (JSON logs)
-scripts/                   # next-launch.mjs (port), db-migrate.ts, db-seed.ts, db-common.ts
-tests/                     # mirrors src/: tests/<layer>/<file>.test.ts
+  app/
+    page.tsx               # placeholder home page
+    api/                   # thin route handlers: parse → use-case → respond
+      _lib/                # route() wrapper (request id, logging, 500s), readJson,
+                           # problem+json mapping, idempotent() for POSTs
+      events/[slug]/…, bookings/…, cron/expire-holds, health
+  contracts/               # shared with the browser: Zod request schemas, response
+                           # types, friendly messages per error code
+  application/             # use-cases + ports.ts (interfaces they need); no SQL here
+    get-catalog, quote-booking, create-booking, pay-booking, get-booking,
+    expire-holds, price-draft (shared by quote + create), index.ts (createUseCases)
+  domain/                  # pure TS, no I/O
+    money, calendar, age, errors, result, catalog, booking, promo, sales-window,
+    inventory (stock demand / shortage)
+    eligibility/           # validateBooking(draft, catalog, clock) → ValidatedBooking
+    pricing/               # priceBooking(...) → Quote; pipeline.ts + steps/*.ts
+  infrastructure/
+    container.ts           # composition root: createDependencies(db), getUseCases()
+    db/                    # schema, client, driver, migrate, seed, seed-data, migrations/
+    repositories/          # catalog, promo, booking (the stock transaction), idempotency
+    payments/simulated.ts, security/secrets.ts, system-clock.ts
+  lib/                     # env.ts (getEnv), logger.ts (JSON logs)
+scripts/                   # next-launch.mjs (port), db-migrate.ts, db-seed.ts
+tests/
+  domain/, lib/, infrastructure/   # unit tests (pnpm test)
+  integration/                     # real Postgres (pnpm test:integration)
+  fixtures/booking.ts              # catalog built from seed-data.ts
 ```
+
+Request flow: **route → `getUseCases()` → use-case → domain (validate, price) → repository (one transaction) → `UseCaseResult` → `toStored()` → JSON or problem+json.**
+
+API conventions (see README "API contract"): every POST that changes state goes through `idempotent()` (UUID `Idempotency-Key`); use-case failures are `AppError` kinds mapped to one HTTP status in `app/api/_lib/problem.ts`; stock conflicts are always 409; rule violations are 422 with `details[].code`.
+
+Stock and state rules (SPEC §8): the booking repository reserves the promo, then decrements pools **in pool-id order** with `UPDATE … WHERE remaining >= qty`, in one transaction. Holds end as `released_at` (expired) or `committed_at` (paid), never both. Expiry runs lazily on catalog/quote/create/pay and daily via the cron (`vercel.json`). Status changes are always guarded by `WHERE status = <expected>`.
+
+Domain flow: **draft → `validateBooking` → `ValidatedBooking` → `priceBooking` → `Quote`.** Pricing only accepts a validated booking, so an invalid draft can never be priced. Rule checks return `Result` with _all_ issues (`IssueCollector`); programmer errors (e.g. negative cents) throw.
+
+Implementation decisions that differ from the spec text:
+
+- Days are identified by ISO date (`"2026-11-11"`) in the domain and API, not by `event_days.id`.
+- Family-pass membership lives only on `FamilyGroupInput.attendeeClientIds`; `Entry` is just `{ kind: "family_pass" }`.
+- Infants "attend" the days an 18+ ticket holder in the booking attends; that is how D5 and D12 (infant dinner) fit X1.
+- Extra error codes beyond SPEC §5: `DUPLICATE_ID`, `UNKNOWN_ATTENDEE`, `EXTRA_AGE_NOT_ALLOWED`.
+- Day passes are priced as one line per person per day (matches person-day stock, D8).
+- Family groups are stored in `booking_family_groups` + `booking_family_group_members`; `booking_lines.family_group_id` links the pass line.
+- A per-day inventory pool for (product, day), if one exists, is used instead of the shared pool.
+- If a promo runs out between quote and create, the booking still goes ahead at full price with `promo.status: "exhausted"` (D15).
+
+To add a pricing rule: write `domain/pricing/steps/<rule>.ts`, add it to `DEFAULT_PRICING_STEPS` in the right position, add a test in `tests/domain/pricing.test.ts`. Tests build their catalog from `seed-data.ts` via `tests/fixtures/booking.ts`.
 
 Keep nesting shallow: one folder per layer, one file per concept. Add a sub-folder only when a concept has several files (e.g. `domain/pricing/steps/`).
 
@@ -67,18 +109,19 @@ The pricing pipeline (`domain/pricing/`) is the **only** place money is calculat
 
 Package manager: **pnpm 10** (pinned via `packageManager`). Node 20 (`.nvmrc`).
 
-| Command                                      | What it does                                                                                        |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                                   | Dev server on `PORT` (from `.env.local`, default 3000), moving to the next free port if it is taken |
-| `pnpm build` / `pnpm start`                  | Production build / serve (`start` uses the same port logic)                                         |
-| `pnpm lint` · `pnpm typecheck` · `pnpm test` | ESLint · `tsc --noEmit` · Vitest                                                                    |
-| `pnpm format` · `pnpm lint:fix`              | Prettier write · ESLint autofix                                                                     |
-| `pnpm check`                                 | typecheck + lint + format:check + test — **run before finishing any task**                          |
-| `pnpm db:generate`                           | Diff `schema.ts` into a new SQL migration                                                           |
-| `pnpm db:migrate`                            | Apply pending migrations to `DATABASE_URL`                                                          |
-| `pnpm db:seed`                               | Upsert the Sharad Utsav 2026 catalog and promos                                                     |
-| `pnpm db:setup`                              | Migrate, then seed                                                                                  |
-| `pnpm db:studio`                             | Drizzle Studio                                                                                      |
+| Command                                      | What it does                                                                                          |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                   | Dev server on `PORT` (from `.env.local`, default 3000), moving to the next free port if it is taken   |
+| `pnpm build` / `pnpm start`                  | Production build / serve (`start` uses the same port logic)                                           |
+| `pnpm lint` · `pnpm typecheck` · `pnpm test` | ESLint · `tsc --noEmit` · Vitest                                                                      |
+| `pnpm test:integration`                      | Integration tests against `TEST_DATABASE_URL` (in `.env.test.local`; the DB name must contain `test`) |
+| `pnpm format` · `pnpm lint:fix`              | Prettier write · ESLint autofix                                                                       |
+| `pnpm check`                                 | typecheck + lint + format:check + test — **run before finishing any task**                            |
+| `pnpm db:generate`                           | Diff `schema.ts` into a new SQL migration                                                             |
+| `pnpm db:migrate`                            | Apply pending migrations to `DATABASE_URL`                                                            |
+| `pnpm db:seed`                               | Upsert the Sharad Utsav 2026 catalog and promos                                                       |
+| `pnpm db:setup`                              | Migrate, then seed                                                                                    |
+| `pnpm db:studio`                             | Drizzle Studio                                                                                        |
 
 Deploy: `vercel --prod` (not set up yet). Set `DATABASE_URL` in Vercel → Settings → Environment Variables for **Production**.
 
@@ -142,6 +185,7 @@ Naming: files `kebab-case.ts`; types/interfaces `PascalCase`; functions/variable
 Before calling a task done:
 
 - Run `pnpm check`. Tests live in `tests/`, mirroring `src/`.
+- If you touched the API, application, repositories or schema, also run `pnpm test:integration`.
 - Run the test suite and report real results. If tests fail, say so and include the output.
 - Every domain rule or money change needs a unit test (SPEC §10 lists the must-have cases).
 - Stock, idempotency, and promo-redemption changes need an integration test, including concurrency races.

@@ -200,6 +200,33 @@ export const bookingAttendees = pgTable("booking_attendees", {
   phone: text("phone"),
 });
 
+// One family pass for one day (D20), and who it covers.
+export const bookingFamilyGroups = pgTable("booking_family_groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  bookingId: uuid("booking_id")
+    .notNull()
+    .references(() => bookings.id),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => products.id),
+  eventDayId: uuid("event_day_id")
+    .notNull()
+    .references(() => eventDays.id),
+});
+
+export const bookingFamilyGroupMembers = pgTable(
+  "booking_family_group_members",
+  {
+    familyGroupId: uuid("family_group_id")
+      .notNull()
+      .references(() => bookingFamilyGroups.id),
+    attendeeId: uuid("attendee_id")
+      .notNull()
+      .references(() => bookingAttendees.id),
+  },
+  (t) => [primaryKey({ columns: [t.familyGroupId, t.attendeeId] })],
+);
+
 // Price snapshot: later catalog changes never rewrite a booking's history.
 export const bookingLines = pgTable(
   "booking_lines",
@@ -212,6 +239,7 @@ export const bookingLines = pgTable(
       .notNull()
       .references(() => products.id),
     attendeeId: uuid("attendee_id").references(() => bookingAttendees.id),
+    familyGroupId: uuid("family_group_id").references(() => bookingFamilyGroups.id),
     eventDayId: uuid("event_day_id").references(() => eventDays.id),
     qty: integer("qty").notNull(),
     unitPriceCents: integer("unit_price_cents").notNull(),
@@ -238,13 +266,20 @@ export const inventoryHolds = pgTable(
       .references(() => inventoryPools.id),
     qty: integer("qty").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    // Stock went back to the pool (booking expired).
     releasedAt: timestamp("released_at", { withTimezone: true }),
+    // Stock was kept for good (booking paid). A hold ends in exactly one of the two.
+    committedAt: timestamp("committed_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
     index("inventory_holds_active_expires_idx")
       .on(t.expiresAt)
-      .where(sql`${t.releasedAt} IS NULL`),
+      .where(sql`${t.releasedAt} IS NULL AND ${t.committedAt} IS NULL`),
+    check(
+      "inventory_holds_single_outcome",
+      sql`${t.releasedAt} IS NULL OR ${t.committedAt} IS NULL`,
+    ),
     check("inventory_holds_qty_positive", sql`${t.qty} > 0`),
   ],
 );
@@ -274,8 +309,11 @@ export const idempotencyKeys = pgTable(
     // Which endpoint the key was used on, so the same UUID can't collide across routes.
     scope: text("scope").notNull(),
     requestHash: text("request_hash").notNull(),
-    responseStatus: integer("response_status").notNull(),
-    responseJson: jsonb("response_json").notNull(),
+    // NULL while the first request is still running; a concurrent retry sees
+    // the row and waits instead of creating a second booking.
+    responseStatus: integer("response_status"),
+    responseJson: jsonb("response_json"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [

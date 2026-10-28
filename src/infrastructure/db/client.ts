@@ -10,6 +10,7 @@ import * as schema from "./schema";
 
 export type Schema = typeof schema;
 export type Db = NodePgDatabase<Schema> | NeonDatabase<Schema>;
+export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 export type DbHandle =
   | { driver: Extract<DbDriver, "neon">; db: NeonDatabase<Schema>; close: () => Promise<void> }

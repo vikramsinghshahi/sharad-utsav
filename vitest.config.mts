@@ -7,6 +7,8 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.ts"],
+    // Integration tests need a database: `pnpm test:integration`.
+    exclude: ["tests/integration/**", "**/node_modules/**"],
     environment: "node",
   },
 });
