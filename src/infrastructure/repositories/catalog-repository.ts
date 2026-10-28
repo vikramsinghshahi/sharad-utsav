@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, max, min, sql } from "drizzle-orm";
 import type { CatalogRepository } from "@/application/ports";
 import { toIsoDate } from "@/domain/calendar";
 import { productRuleSchema, toProductId, type Product } from "@/domain/catalog";
@@ -6,8 +6,52 @@ import { toCents } from "@/domain/money";
 import type { Db } from "../db/client";
 import { eventDays, events, inventoryPools, products } from "../db/schema";
 
+const toEventInfo = (event: typeof events.$inferSelect) => ({
+  id: event.id,
+  slug: event.slug,
+  name: event.name,
+  venue: event.venue,
+  tagline: event.tagline,
+  timezone: event.timezone,
+  currency: event.currency,
+});
+
 export function catalogRepository(db: Db): CatalogRepository {
   return {
+    async listEvents() {
+      const lowestPrice = db
+        .select({ eventId: products.eventId, cents: min(products.priceCents).as("cents") })
+        .from(products)
+        .where(and(eq(products.active, true), eq(products.category, "entry")))
+        .groupBy(products.eventId)
+        .as("lowest_price");
+      const rows = await db
+        .select({
+          event: events,
+          firstDay: min(eventDays.date),
+          lastDay: max(eventDays.date),
+          lowestEntryPriceCents: sql<number | null>`max(${lowestPrice.cents})`,
+        })
+        .from(events)
+        .innerJoin(eventDays, eq(eventDays.eventId, events.id))
+        .leftJoin(lowestPrice, eq(lowestPrice.eventId, events.id))
+        .groupBy(events.id)
+        .orderBy(asc(min(eventDays.date)));
+      return rows.flatMap((row) =>
+        row.firstDay && row.lastDay
+          ? [
+              {
+                ...toEventInfo(row.event),
+                firstDay: toIsoDate(row.firstDay),
+                lastDay: toIsoDate(row.lastDay),
+                lowestEntryPriceCents:
+                  row.lowestEntryPriceCents === null ? null : Number(row.lowestEntryPriceCents),
+              },
+            ]
+          : [],
+      );
+    },
+
     async findBySlug(slug) {
       const [event] = await db.select().from(events).where(eq(events.slug, slug)).limit(1);
       if (!event) return null;
@@ -38,13 +82,7 @@ export function catalogRepository(db: Db): CatalogRepository {
               );
 
       return {
-        event: {
-          id: event.id,
-          slug: event.slug,
-          name: event.name,
-          timezone: event.timezone,
-          currency: event.currency,
-        },
+        event: toEventInfo(event),
         catalog: {
           eventSlug: event.slug,
           timezone: event.timezone,

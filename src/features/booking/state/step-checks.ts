@@ -4,12 +4,12 @@ import { bookerSchema } from "@/contracts/requests";
 import type { ProblemDetails } from "@/contracts/responses";
 import { checkBookerAge, parseDateOfBirth } from "@/domain/age";
 import type { IsoDate } from "@/domain/calendar";
-import { formatDay } from "../format";
 import { fieldIds, fieldTargetFor, STEP_HEADING_ID } from "./field-targets";
 import { ageInfo, dobProblem, findBookerAttendee } from "./selectors";
 import { stockIssues } from "./stock-issues";
 import { STEPS, type Action, type BookingState, type Step } from "./types";
 import type { CatalogProduct } from "./selectors";
+import { BAND_RANGE, RESPONSIBLE_AGE } from "../components/age-labels";
 
 // Instant checks before "Next", so people hear about a problem on the screen
 // where they can fix it. The server re-checks everything; these only guide.
@@ -36,7 +36,11 @@ const personLabel = (state: BookingState, index: number) => {
 function whoIssues(state: BookingState, today: IsoDate): StepIssue[] {
   if (state.attendees.length === 0) {
     return [
-      { step: "who", fieldId: "add-person", message: "Add at least one person who is coming." },
+      {
+        step: "who",
+        fieldId: fieldIds.addPerson,
+        message: "Add at least one person who is coming.",
+      },
     ];
   }
   return state.attendees.flatMap((a, index) => {
@@ -101,8 +105,7 @@ function passesIssues(state: BookingState): StepIssue[] {
     issues.push({
       step: "passes",
       fieldId: STEP_HEADING_ID,
-      message:
-        "Children under 5 come free with an adult aged 18 or over. Please add the adult who is bringing them.",
+      message: `Children ${BAND_RANGE.infant} come free with an adult aged ${RESPONSIBLE_AGE} or over. Please add the adult who is bringing them.`,
     });
   }
   state.familyGroups.forEach((g) => {
@@ -172,17 +175,17 @@ export function problemIssues(
   if (problem.code === "SOLD_OUT" || problem.code === "INSUFFICIENT_STOCK") {
     const fallback = problem.detail ?? "Something in this booking has sold out.";
     return catalog
-      ? stockIssues(state, catalog, fallback)
+      ? stockIssues(state, catalog, problem)
       : [{ step: "review", fieldId: STEP_HEADING_ID, message: fallback, persistent: true }];
   }
   const details = problem.details ?? [];
   if (details.length === 0) {
     return [{ step: "review", fieldId: STEP_HEADING_ID, message: problem.detail ?? problem.title }];
   }
+  // Server messages are already written for people (dates formatted, products named).
   return details.map((detail) => ({
     ...fieldTargetFor(state, detail.path),
-    // Server messages carry ISO dates ("2026-11-12"); show them as "Thu 12 Nov".
-    message: detail.message.replace(/\b\d{4}-\d{2}-\d{2}\b/g, (iso) => formatDay(iso)),
+    message: detail.message,
   }));
 }
 

@@ -33,13 +33,13 @@ export function resolveAttendance(
   const issues = new IssueCollector();
   const resolved = attendees.map((attendee): ValidatedAttendee => {
     if (attendee.ageBand === "infant") {
-      if (responsibleDates.length === 0) issues.add(unaccompanied(attendee, []));
+      if (responsibleDates.length === 0) issues.add(unaccompanied(attendee, [], allDates));
       return { ...attendee, attendanceDates: responsibleDates };
     }
     const dates = ticketedDates.get(attendee.clientId) ?? [];
     if (attendee.ageBand === "child") {
       const alone = dates.filter((date) => !responsibleDates.includes(date));
-      if (alone.length > 0) issues.add(unaccompanied(attendee, alone));
+      if (alone.length > 0) issues.add(unaccompanied(attendee, alone, allDates));
     }
     return { ...attendee, attendanceDates: dates };
   });
@@ -66,10 +66,15 @@ function ticketDates(
   }
 }
 
-function unaccompanied(attendee: AttendeeCore, dates: readonly IsoDate[]): DomainIssue {
+function unaccompanied(
+  attendee: AttendeeCore,
+  dates: readonly IsoDate[],
+  allDates: readonly IsoDate[],
+): DomainIssue {
   return issue("CHILD_UNACCOMPANIED", ["attendees", attendee.index], {
     firstName: attendee.firstName,
     dates: dates.join(", "),
+    festivalDayCount: allDates.length,
   });
 }
 

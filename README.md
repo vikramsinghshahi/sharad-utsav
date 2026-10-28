@@ -2,7 +2,7 @@
 
 Festival booking app for Sharad Utsav 2026 (Radha Krishna Temple, Allen, Texas). See [docs/SPEC.md](docs/SPEC.md) for the design.
 
-> Status: domain rules and the booking API are built and tested. The booking UI is not built yet.
+> Status: domain rules, the booking API and the booking UI are built and tested. Not yet deployed. See [TEST-CASES.md](TEST-CASES.md) for what is checked and how.
 
 ## Run locally
 
@@ -32,12 +32,14 @@ The tests wipe that database, so its name must contain `test`.
 
 ## Environment variables
 
-| Variable            | Where                | Required | Purpose                                                                                                              |
-| ------------------- | -------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`      | `.env.local`, Vercel | yes      | Postgres connection string. A `*.neon.tech` host uses the Neon serverless driver; any other host uses node-postgres. |
-| `CRON_SECRET`       | `.env.local`, Vercel | prod     | Bearer secret Vercel sends to `/api/cron/expire-holds`. Without it the cron endpoint refuses every call.             |
-| `PORT`              | `.env.local`         | no       | Preferred port for `pnpm dev` / `pnpm start` (local only; Vercel ignores it).                                        |
-| `TEST_DATABASE_URL` | `.env.test.local`    | tests    | Separate database for `pnpm test:integration`. Never point it at real data.                                          |
+| Variable                       | Where                | Required | Purpose                                                                                                              |
+| ------------------------------ | -------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                 | `.env.local`, Vercel | yes      | Postgres connection string. A `*.neon.tech` host uses the Neon serverless driver; any other host uses node-postgres. |
+| `CRON_SECRET`                  | `.env.local`, Vercel | prod     | Bearer secret Vercel sends to `/api/cron/expire-holds`. Without it the cron endpoint refuses every call.             |
+| `PORT`                         | `.env.local`         | no       | Preferred port for `pnpm dev` / `pnpm start` (local only; Vercel ignores it).                                        |
+| `TEST_DATABASE_URL`            | `.env.test.local`    | tests    | Separate database for `pnpm test:integration`. Never point it at real data.                                          |
+| `NEXT_PUBLIC_SITE_NAME`        | `.env.local`, Vercel | no       | Site title and heading (default "Festival tickets"). Events themselves come from the database.                       |
+| `NEXT_PUBLIC_SITE_DESCRIPTION` | `.env.local`, Vercel | no       | One-line site description under the heading and in page metadata.                                                    |
 
 ## Using Neon
 
@@ -53,15 +55,16 @@ Then set the same `DATABASE_URL` (and `CRON_SECRET`) in Vercel → Project → S
 
 JSON in and out. Money is always integer cents (`…Cents`). Dates are `YYYY-MM-DD` in the event timezone (`America/Chicago`). The server ignores any price or total a client sends.
 
-| Method & path                    | Purpose                                              | Request                                                                   | Success                                                                                                                                                          |
-| -------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/events/{slug}`         | Catalog with live stock                              | —                                                                         | `200 { event, days[{ date, cutoffTime, onSale }], allDaysOnSale, products[{ id, code, displayName, category, priceCents, pricing, rule, remaining, soldOut }] }` |
-| `POST /api/events/{slug}/quotes` | Price a draft, no side effects                       | `BookingDraft`                                                            | `200 Quote`                                                                                                                                                      |
-| `POST /api/bookings`             | Validate, re-price, hold stock 15 min, reserve promo | `BookingDraft` + `eventSlug` + `booker`, header `Idempotency-Key: <uuid>` | `201 { bookingId, accessToken, status, confirmationCode, quote, holdExpiresAt, payment: { provider, required } }`                                                |
-| `POST /api/bookings/{id}/pay`    | Simulated payment                                    | `{ outcome: "succeed" \| "decline" }`, header `Idempotency-Key`           | `200 { status: "confirmed", confirmationCode }`                                                                                                                  |
-| `GET /api/bookings/{id}?token=…` | Confirmation page data                               | `token` = `accessToken` from create                                       | `200 { bookingId, status, confirmationCode, booker, attendees[], lines[], subtotalCents, discountCents, totalCents, promoCode, qrPayload }`                      |
-| `GET /api/cron/expire-holds`     | Release expired holds (daily safety net)             | `Authorization: Bearer <CRON_SECRET>`                                     | `200 { released }`                                                                                                                                               |
-| `GET /api/health`                | Liveness + DB check                                  | —                                                                         | `200 { status, database: { driver, reachable } }`                                                                                                                |
+| Method & path                    | Purpose                                              | Request                                                                   | Success                                                                                                                                                                                                              |
+| -------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/events`                | Upcoming events (landing page)                       | —                                                                         | `200 { events[{ slug, name, venue, tagline, timezone, currency, firstDay, lastDay, lowestEntryPriceCents }] }`                                                                                                       |
+| `GET /api/events/{slug}`         | Catalog with live stock                              | —                                                                         | `200 { event: { slug, name, venue, tagline, timezone, currency }, days[{ date, cutoffTime, onSale }], allDaysOnSale, products[{ id, code, displayName, category, priceCents, pricing, rule, remaining, soldOut }] }` |
+| `POST /api/events/{slug}/quotes` | Price a draft, no side effects                       | `BookingDraft`                                                            | `200 Quote`                                                                                                                                                                                                          |
+| `POST /api/bookings`             | Validate, re-price, hold stock 15 min, reserve promo | `BookingDraft` + `eventSlug` + `booker`, header `Idempotency-Key: <uuid>` | `201 { bookingId, accessToken, status, confirmationCode, quote, holdExpiresAt, payment: { provider, required } }`                                                                                                    |
+| `POST /api/bookings/{id}/pay`    | Simulated payment                                    | `{ outcome: "succeed" \| "decline" }`, header `Idempotency-Key`           | `200 { status: "confirmed", confirmationCode }`                                                                                                                                                                      |
+| `GET /api/bookings/{id}?token=…` | Confirmation page data                               | `token` = `accessToken` from create                                       | `200 { bookingId, event, status, confirmationCode, booker, attendees[], lines[], subtotalCents, discountCents, totalCents, promoCode, qrPayload }`                                                                   |
+| `GET /api/cron/expire-holds`     | Release expired holds (daily safety net)             | `Authorization: Bearer <CRON_SECRET>`                                     | `200 { released }`                                                                                                                                                                                                   |
+| `GET /api/health`                | Liveness + DB check                                  | —                                                                         | `200 { status, database: { driver, reachable } }`                                                                                                                                                                    |
 
 **`BookingDraft`** (see [src/contracts/requests.ts](src/contracts/requests.ts)):
 
@@ -89,7 +92,7 @@ JSON in and out. Money is always integer cents (`…Cents`). Dates are `YYYY-MM-
 
 **`Quote`**: `{ lines[{ productId, productCode, attendeeClientId, familyGroupId, date, qty, unitPriceCents, discountCents, lineTotalCents }], subtotalCents, discountCents, totalCents, promo, suggestions[], warnings[] }`. `promo.status` is `applied`, `not_applicable`, `expired`, `not_yet_valid`, `exhausted`, `unknown` or `none`. An invalid code never blocks a booking.
 
-**Errors** are `application/problem+json`: `{ type, title, status, code, detail?, details?: [{ path, code, message }], requestId }`.
+**Errors** are `application/problem+json`: `{ type, title, status, code, detail?, details?: [{ path, code, message, params? }], requestId }`. `message` is written for people (dates formatted, products named); `params` carries the raw values (e.g. `productId`, `remaining`, ISO `date`) for clients that need them.
 
 | Status | `code`                                                           | When                                                                             |
 | ------ | ---------------------------------------------------------------- | -------------------------------------------------------------------------------- |

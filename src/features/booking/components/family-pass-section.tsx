@@ -7,6 +7,7 @@ import type { Action, BookingState } from "../state/types";
 import { errorIdFor, FieldError } from "./field-error";
 import { Money } from "./money";
 import { input, label, quietButton, secondaryButton } from "./styles";
+import { BAND_RANGE } from "./age-labels";
 
 interface Props {
   product: PassProductView;
@@ -50,8 +51,8 @@ export function FamilyPassSection({ product, catalog, state, dispatch, errorsFor
         </h3>
         <p className="mt-1 text-sm text-white/80">
           One {product.displayName} (<Money cents={product.priceCents} />) covers one day for 1–
-          {maxAdults} adults (12+) and up to {maxChildren} children (5–11). Coming on more than one
-          day? Add a pass for each day.
+          {maxAdults} adults ({BAND_RANGE.adult}) and up to {maxChildren} children (
+          {BAND_RANGE.child}). Coming on more than one day? Add a pass for each day.
         </p>
       </div>
 

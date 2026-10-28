@@ -54,7 +54,17 @@ export function validateDates(
     dates.push(date);
 
     const day = ctx.catalog.days.find((d) => d.date === date);
-    if (!day) return issues.add(issue("INVALID_DAYS", at, { reason: "outside_festival", date }));
+    if (!day) {
+      const first = ctx.catalog.days[0]?.date;
+      const last = ctx.catalog.days.at(-1)?.date;
+      return issues.add(
+        issue("INVALID_DAYS", at, {
+          reason: "outside_festival",
+          date,
+          ...(first && last ? { firstDate: first, lastDate: last } : {}),
+        }),
+      );
+    }
     if (rules.allowedDates && !rules.allowedDates.includes(date)) {
       return issues.add(issue("EXTRA_DAY_NOT_ALLOWED", at, { date }));
     }

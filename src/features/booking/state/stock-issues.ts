@@ -1,20 +1,23 @@
+import type { ProblemDetails } from "@/contracts/responses";
 import { fieldIds, STEP_HEADING_ID } from "./field-targets";
 import { attendeeName, firstNameOf, shortProducts, type CatalogProduct } from "./selectors";
 import type { StepIssue } from "./step-checks";
 import type { Action, BookingState } from "./types";
 
-// A 409 SOLD_OUT / INSUFFICIENT_STOCK names no product (its path is empty), so the
-// draft is compared with fresh stock to say what ran out, where to change it, and,
+// A 409 SOLD_OUT / INSUFFICIENT_STOCK: say what ran out, where to change it, and,
 // when there is an obvious change, offer it as one click. Used for quotes and creates.
+// The server names the product in `details[0].params` (productId, remaining); the
+// draft is compared with the catalog to place it on the right field.
 
 type Source = Pick<BookingState, "attendees" | "familyGroups" | "attendeeExtras" | "bookingExtras">;
 
 export function stockIssues(
   state: Source,
   catalog: { products: CatalogProduct[] },
-  fallbackMessage: string,
+  problem: Pick<ProblemDetails, "detail" | "details">,
 ): StepIssue[] {
-  const short = shortProducts(state, catalog);
+  const fallbackMessage = problem.detail ?? "Something in this booking has sold out.";
+  const short = shortProducts(state, withReportedStock(catalog, problem));
   if (short.length === 0) {
     // Stock may have come back, or the catalog is still reloading: say what the server said.
     return [
@@ -22,6 +25,22 @@ export function stockIssues(
     ];
   }
   return short.map(({ product, wanted }) => issueFor(state, product, wanted));
+}
+
+// The server's figure is fresher than any catalog snapshot, so it wins.
+function withReportedStock(
+  catalog: { products: CatalogProduct[] },
+  problem: Pick<ProblemDetails, "details">,
+): { products: CatalogProduct[] } {
+  const params = problem.details?.[0]?.params;
+  const productId = params?.productId;
+  const remaining = params?.remaining;
+  if (typeof productId !== "string" || typeof remaining !== "number") return catalog;
+  return {
+    products: catalog.products.map((p) =>
+      p.id === productId ? { ...p, remaining, soldOut: remaining <= 0 } : p,
+    ),
+  };
 }
 
 const places = (n: number) => `${n} ${n === 1 ? "place" : "places"}`;
@@ -89,7 +108,7 @@ function issueFor(state: Source, product: CatalogProduct, wanted: number): StepI
     fieldId: first ? fieldIds.attendeeExtra(product.id, first.attendeeClientId) : STEP_HEADING_ID,
     message:
       left === 0
-        ? `The ${name} is now full — 0 places left.`
+        ? `The ${name} is now full.`
         : `The ${name} has only ${places(left)} left — this booking has ${wanted}. Please untick ${wanted - left}.`,
     persistent: true,
     ...(left === 0 && removeAll.length > 0

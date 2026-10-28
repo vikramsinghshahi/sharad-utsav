@@ -7,8 +7,27 @@ import type { Quote } from "@/domain/pricing/types";
 // Response bodies (SPEC §7). Money is always integer cents; dates are ISO in the
 // event timezone; timestamps are ISO-8601 UTC strings.
 
+// Everything the UI shows about an event comes from here, never from constants.
+export interface EventInfo {
+  slug: string;
+  name: string;
+  venue: string | null;
+  tagline: string | null;
+  timezone: string;
+  currency: string;
+}
+
+export interface EventListResponse {
+  events: (EventInfo & {
+    firstDay: IsoDate;
+    lastDay: IsoDate;
+    // Cheapest active ticket, for "from $8" on the landing page; null if none.
+    lowestEntryPriceCents: number | null;
+  })[];
+}
+
 export interface CatalogResponse {
-  event: { slug: string; name: string; timezone: string; currency: string };
+  event: EventInfo;
   days: { date: IsoDate; cutoffTime: string; onSale: boolean }[];
   allDaysOnSale: boolean;
   products: {
@@ -45,6 +64,7 @@ export interface PayResponse {
 
 export interface BookingResponse {
   bookingId: string;
+  event: EventInfo;
   status: BookingStatus;
   confirmationCode: string | null;
   holdExpiresAt: string | null;
@@ -85,6 +105,12 @@ export interface ProblemDetails {
   status: number;
   code: string;
   detail?: string;
-  details?: { path: (string | number)[]; code: string; message: string }[];
+  details?: {
+    path: (string | number)[];
+    code: string;
+    message: string;
+    // The values the message was built from (e.g. productId, date), for UIs that need them.
+    params?: Record<string, string | number>;
+  }[];
   requestId?: string;
 }

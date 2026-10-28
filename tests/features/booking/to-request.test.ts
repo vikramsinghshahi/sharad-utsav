@@ -151,7 +151,7 @@ describe("error paths back to fields", () => {
 });
 
 describe("problemIssues", () => {
-  it("places each detail on its field and prints dates for people", () => {
+  it("places each detail on its field, keeping the server's wording", () => {
     const issues = problemIssues(family, {
       type: "/problems/validation-failed",
       title: "Some details need attention",
@@ -161,7 +161,7 @@ describe("problemIssues", () => {
         {
           path: ["attendees", 1],
           code: "CHILD_UNACCOMPANIED",
-          message: "Aarav needs someone aged 18 or over with them on 2026-11-10, 2026-11-13.",
+          message: "Aarav needs someone aged 18 or over with them on Tue 10 Nov, Fri 13 Nov.",
         },
       ],
     });
@@ -212,7 +212,7 @@ describe("stock conflicts and step blocking", () => {
     expect(issue).toMatchObject({
       step: "extras",
       fieldId: `extra-${IDS.garba}-a`,
-      message: "The Garba Workshop is now full — 0 places left.",
+      message: "The Garba Workshop is now full.",
       fix: { label: "Remove Garba Workshop for Priya Sharma" },
     });
     // The fix is ordinary reducer actions, and applying it removes the extra.
@@ -220,10 +220,30 @@ describe("stock conflicts and step blocking", () => {
     expect(fixed.attendeeExtras.some((e) => e.productId === IDS.garba)).toBe(false);
   });
 
+  it("trusts the stock the server reports over a stale catalog snapshot", () => {
+    const staleCatalog = { products: [{ ...garba, remaining: 2, soldOut: false }] };
+    const problem = {
+      detail: "Sorry, Garba Workshop has sold out.",
+      details: [
+        {
+          path: [],
+          code: "SOLD_OUT",
+          message: "Sorry, Garba Workshop has sold out.",
+          params: { productId: IDS.garba, remaining: 0 },
+        },
+      ],
+    };
+    expect(stockIssues(withGarba, staleCatalog, problem)[0]).toMatchObject({ step: "extras" });
+    // Without the server's figure the stale snapshot says nothing is short.
+    expect(stockIssues(withGarba, staleCatalog, { detail: "x" })[0]?.step).toBe("review");
+  });
+
   it("the same helper serves a create conflict (stockIssues)", () => {
-    expect(stockIssues(withGarba, { products: [garba] }, "x")[0]?.step).toBe("extras");
+    expect(stockIssues(withGarba, { products: [garba] }, { detail: "x" })[0]?.step).toBe("extras");
     // Nothing short any more (e.g. stock came back): fall back to the server's words.
-    expect(stockIssues(family, { products: [garba] }, "Sorry, this has sold out.")).toEqual([
+    expect(
+      stockIssues(family, { products: [garba] }, { detail: "Sorry, this has sold out." }),
+    ).toEqual([
       {
         step: "review",
         fieldId: "step-heading",

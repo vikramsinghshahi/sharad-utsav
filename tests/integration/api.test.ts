@@ -7,6 +7,7 @@ import { POST as createBookingRoute } from "@/app/api/bookings/route";
 import { GET as bookingRoute } from "@/app/api/bookings/[id]/route";
 import { POST as payRoute } from "@/app/api/bookings/[id]/pay/route";
 import { POST as quoteRoute } from "@/app/api/events/[slug]/quotes/route";
+import { GET as eventsRoute } from "@/app/api/events/route";
 import {
   adult,
   bookingRequest,
@@ -146,7 +147,7 @@ describe("errors are problem+json with stable codes", () => {
     });
   });
 
-  it("409 SOLD_OUT once the last Garba places are gone", async () => {
+  it("409 SOLD_OUT names the product, with its id and what's left in params", async () => {
     const pid = await productIds();
     await createBookingRoute(post("/api/bookings", garbaBooking(pid), randomUUID()), noCtx);
     const response = await createBookingRoute(
@@ -154,7 +155,13 @@ describe("errors are problem+json with stable codes", () => {
       noCtx,
     );
     expect(response.status).toBe(409);
-    expect(((await response.json()) as ProblemDetails).code).toBe("SOLD_OUT");
+    const body = (await response.json()) as ProblemDetails;
+    expect(body.code).toBe("SOLD_OUT");
+    expect(body.details?.[0]).toMatchObject({
+      code: "SOLD_OUT",
+      message: "Sorry, Garba Workshop has sold out.",
+      params: { productId: pid.GARBA, productName: "Garba Workshop", remaining: 0 },
+    });
   });
 
   it("400 for the wrong shape and 404 for unknown or malformed booking ids", async () => {
@@ -205,5 +212,39 @@ describe("full flow through the API", () => {
     );
     expect(view.status).toBe(200);
     expect(await view.json()).toMatchObject({ status: "confirmed", totalCents: 4000 + 3000 });
+  });
+});
+
+describe("everything about the event comes from data", () => {
+  it("GET /api/events lists the event with its venue, dates and lowest price", async () => {
+    const response = await eventsRoute(new Request("http://test/api/events"), noCtx);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      events: [
+        expect.objectContaining({
+          slug: "sharad-utsav-2026",
+          name: "Sharad Utsav 2026",
+          venue: "Radha Krishna Temple, Allen, Texas",
+          currency: "USD",
+          firstDay: "2026-11-10",
+          lastDay: "2026-11-14",
+          lowestEntryPriceCents: 800,
+        }),
+      ],
+    });
+  });
+
+  it("the confirmation carries its own event, so the page needs no constants", async () => {
+    const pid = await productIds();
+    const created = (await (
+      await createBookingRoute(post("/api/bookings", garbaBooking(pid), randomUUID()), noCtx)
+    ).json()) as CreateBookingResponse;
+    const view = await bookingRoute(
+      new Request(`http://test/api/bookings/${created.bookingId}?token=${created.accessToken}`),
+      idCtx(created.bookingId),
+    );
+    expect(await view.json()).toMatchObject({
+      event: { slug: "sharad-utsav-2026", name: "Sharad Utsav 2026", currency: "USD" },
+    });
   });
 });

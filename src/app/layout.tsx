@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
+import { SITE } from "@/lib/site";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -14,8 +15,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Sharad Utsav 2026 — Tickets",
-  description: "Book tickets for Sharad Utsav 2026 at Radha Krishna Temple, Allen, Texas.",
+  title: { default: SITE.name, template: `%s — ${SITE.name}` },
+  description: SITE.description,
 };
 
 export default function RootLayout({

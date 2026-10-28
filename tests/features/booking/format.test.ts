@@ -3,8 +3,9 @@ import { formatCountdown, formatDay, formatLongDate, formatMoney } from "@/featu
 
 describe("format", () => {
   it("prints cents as US dollars", () => {
-    expect(formatMoney(14670)).toBe("$146.70");
-    expect(formatMoney(0)).toBe("$0.00");
+    expect(formatMoney(14670, "USD")).toBe("$146.70");
+    expect(formatMoney(0, "USD")).toBe("$0.00");
+    expect(formatMoney(150000, "INR")).toBe("₹1,500.00");
   });
 
   it("prints ISO dates without shifting the day", () => {

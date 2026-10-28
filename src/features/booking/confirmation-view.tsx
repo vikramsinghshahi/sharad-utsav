@@ -6,11 +6,13 @@ import { useEffect, useState } from "react";
 import type { BookingResponse } from "@/contracts/responses";
 import type { EntryKind } from "@/domain/booking";
 import { fetchBooking } from "./api/client";
-import { DiyaIcon } from "./components/diya-icon";
+import { DiyaIcon } from "@/components/diya-icon";
 import { Money } from "./components/money";
 import { Skeleton } from "./components/skeleton";
 import { secondaryButton } from "./components/styles";
 import { formatDay } from "./format";
+import { EventProvider } from "./components/event-context";
+import { BAND_LABEL } from "./components/age-labels";
 
 type LoadState =
   | { status: "loading" }
@@ -18,7 +20,6 @@ type LoadState =
   | { status: "not_found" }
   | { status: "error"; network: boolean };
 
-const BAND_LABEL = { adult: "Adult", child: "Child", infant: "Under 5" } as const;
 const ENTRY_LABEL: Record<EntryKind, string> = {
   none: "Free, no ticket needed",
   day_pass: "Day pass",
@@ -101,7 +102,7 @@ export function ConfirmationView({ id, token }: { id: string; token: string }) {
             ? "Your places are held, but the payment hasn't been completed. Go back to the booking tab to pay."
             : "The places for this booking were released. You're welcome to book again."}
         </p>
-        <Link href="/events/sharad-utsav-2026/book" className={`${secondaryButton} mt-6`}>
+        <Link href={`/events/${booking.event.slug}/book`} className={`${secondaryButton} mt-6`}>
           Book tickets
         </Link>
       </Shell>
@@ -109,27 +110,29 @@ export function ConfirmationView({ id, token }: { id: string; token: string }) {
   }
 
   return (
-    <Shell>
-      <div className="no-print mb-6 flex items-center gap-3">
-        <DiyaIcon lit />
-        <div>
-          <h1 className="font-serif text-4xl leading-tight font-semibold">You&apos;re booked</h1>
-          <p className="text-white/85">
-            Confirmation sent to{" "}
-            <span className="font-medium text-white">{booking.booker.email}</span>
-          </p>
+    <EventProvider value={booking.event}>
+      <Shell>
+        <div className="no-print mb-6 flex items-center gap-3">
+          <DiyaIcon lit />
+          <div>
+            <h1 className="font-serif text-4xl leading-tight font-semibold">You&apos;re booked</h1>
+            <p className="text-white/85">
+              Confirmation sent to{" "}
+              <span className="font-medium text-white">{booking.booker.email}</span>
+            </p>
+          </div>
         </div>
-      </div>
-      <Ticket booking={booking} code={booking.confirmationCode} />
-      <div className="no-print mt-6 flex flex-wrap gap-3">
-        <button type="button" onClick={() => window.print()} className={secondaryButton}>
-          Print or save as PDF
-        </button>
-        <Link href="/" className={secondaryButton}>
-          Done
-        </Link>
-      </div>
-    </Shell>
+        <Ticket booking={booking} code={booking.confirmationCode} />
+        <div className="no-print mt-6 flex flex-wrap gap-3">
+          <button type="button" onClick={() => window.print()} className={secondaryButton}>
+            Print or save as PDF
+          </button>
+          <Link href="/" className={secondaryButton}>
+            Done
+          </Link>
+        </div>
+      </Shell>
+    </EventProvider>
   );
 }
 
@@ -147,9 +150,11 @@ function Ticket({ booking, code }: { booking: BookingResponse; code: string }) {
       <div className="flex flex-col items-center gap-5 px-6 pt-7 pb-8 text-center sm:flex-row sm:items-center sm:text-left">
         <div className="flex-1">
           <p className="text-sm font-semibold tracking-[0.2em] text-primary-text uppercase">
-            Sharad Utsav 2026
+            {booking.event.name}
           </p>
-          <p className="mt-1 text-sm text-primary-text">Radha Krishna Temple · Allen, Texas</p>
+          {booking.event.venue && (
+            <p className="mt-1 text-sm text-primary-text">{booking.event.venue}</p>
+          )}
           <p className="mt-5 text-sm text-primary-text">Confirmation code</p>
           <p className="font-serif text-4xl font-bold tracking-wide tabular-nums lining-nums sm:text-5xl">
             {code}

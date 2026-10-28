@@ -1,10 +1,11 @@
 import { EntryPicker } from "../components/entry-picker";
 import { FamilyPassSection } from "../components/family-pass-section";
 import { SuggestionCard } from "../components/suggestion-card";
-import { fieldIds } from "../state/field-targets";
+import { fieldIds, STEP_HEADING_ID } from "../state/field-targets";
 import { ageInfo, attendeeName, familyPass, responsibleAdultDates } from "../state/selectors";
 import { formatDays } from "../format";
 import type { StepProps } from "./step-props";
+import { BAND_LABEL, RESPONSIBLE_AGE } from "../components/age-labels";
 
 // Step 2: a ticket for each person aged 5+, and any family passes.
 export function PassesStep({ state, dispatch, catalog, quote, errorsFor }: StepProps) {
@@ -67,7 +68,7 @@ export function PassesStep({ state, dispatch, catalog, quote, errorsFor }: StepP
           className="rounded-2xl border border-line bg-surface p-4"
         >
           <h3 id="infants-title" className="font-semibold">
-            Under 5 — free, no ticket needed
+            {BAND_LABEL.infant} — free, no ticket needed
           </h3>
           <ul className="mt-2 space-y-1 text-sm">
             {infants.map(({ attendee }) => (
@@ -76,7 +77,7 @@ export function PassesStep({ state, dispatch, catalog, quote, errorsFor }: StepP
                 <span className="text-white/75">
                   {infantDays.length > 0
                     ? ` · comes with your adults on ${formatDays(infantDays)}`
-                    : " · comes with an adult aged 18+ from your group"}
+                    : ` · comes with an adult aged ${RESPONSIBLE_AGE}+ from your group`}
                 </span>
                 {errorsFor(fieldIds.attendee(attendee.clientId)).map((m) => (
                   <span key={m} className="block text-error-text">
@@ -98,6 +99,15 @@ export function PassesStep({ state, dispatch, catalog, quote, errorsFor }: StepP
             catalog={catalog}
             state={state}
             dispatch={dispatch}
+            onApplied={() =>
+              document
+                .getElementById(
+                  s.code === "SWITCH_TO_ALL_DAYS"
+                    ? fieldIds.entry(s.attendeeClientId)
+                    : STEP_HEADING_ID,
+                )
+                ?.focus()
+            }
           />
         ))}
 

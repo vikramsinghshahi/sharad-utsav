@@ -9,6 +9,9 @@ export const ORG_NAME = "Radha Krishna Temple, Allen";
 export const EVENT = {
   slug: "sharad-utsav-2026",
   name: "Sharad Utsav 2026",
+  venue: "Radha Krishna Temple, Allen, Texas",
+  tagline:
+    "Five evenings of garba, dandiya and devotion. Book for the whole family in a few minutes — grandparents and little ones included.",
   timezone: "America/Chicago",
   currency: "USD",
 } as const;

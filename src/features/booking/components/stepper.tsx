@@ -1,5 +1,5 @@
 import { STEP_TITLES, STEPS, type Step } from "../state/types";
-import { DiyaIcon } from "./diya-icon";
+import { DiyaIcon } from "@/components/diya-icon";
 
 interface Props {
   current: Step;

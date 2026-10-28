@@ -116,6 +116,12 @@ export function toPersisted(state: PersistedState): PersistedState {
     booker,
     createAttempt,
     payAttempt,
-    hold,
+    hold: hold && withoutQuote(hold),
   };
+}
+
+// The hold's quote stays in memory only (see Hold.quote).
+function withoutQuote(hold: NonNullable<PersistedState["hold"]>): PersistedState["hold"] {
+  const { bookingId, accessToken, holdExpiresAt, totalCents, reviewedTotalCents } = hold;
+  return { bookingId, accessToken, holdExpiresAt, totalCents, reviewedTotalCents };
 }

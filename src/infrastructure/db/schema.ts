@@ -52,6 +52,9 @@ export const events = pgTable("events", {
     .references(() => organizations.id),
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
+  // Shown on the landing page and tickets, so nothing about the event is hard-coded in the UI.
+  venue: text("venue"),
+  tagline: text("tagline"),
   timezone: text("timezone").notNull(),
   currency: text("currency").notNull(),
   salesOpenAt: timestamp("sales_open_at", { withTimezone: true }),

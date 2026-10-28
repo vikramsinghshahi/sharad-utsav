@@ -1,7 +1,10 @@
 import type { AppError, StoredResponse, UseCaseResult } from "@/application";
 import { messageFor } from "@/contracts/messages";
 import type { ProblemDetails } from "@/contracts/responses";
+import { HOLD_DURATION_MS } from "@/domain/booking";
 import type { DomainIssue } from "@/domain/errors";
+
+const HOLD_MINUTES = Math.round(HOLD_DURATION_MS / 60_000);
 
 type ProblemExtra = Pick<ProblemDetails, "detail" | "details" | "requestId">;
 
@@ -38,6 +41,7 @@ export function issueDetails(issues: readonly DomainIssue[]): ProblemDetails["de
     path: issue.path,
     code: issue.code,
     message: messageFor(issue),
+    ...(issue.params ? { params: issue.params } : {}),
   }));
 }
 
@@ -54,11 +58,11 @@ export function appErrorBody(error: AppError, requestId: string): ProblemDetails
         requestId,
       });
     case "stock": {
-      const { code, productCode, date, remaining } = error.shortage;
+      const { code, productId, productCode, productName, date, remaining } = error.shortage;
       const issue: DomainIssue = {
         code,
         path: [],
-        params: { productCode, remaining, ...(date ? { date } : {}) },
+        params: { productId, productCode, productName, remaining, ...(date ? { date } : {}) },
       };
       return problemBody(409, code, "Not enough left", {
         detail: messageFor(issue),
@@ -68,7 +72,7 @@ export function appErrorBody(error: AppError, requestId: string): ProblemDetails
     }
     case "hold_expired":
       return problemBody(410, "HOLD_EXPIRED", "Your places were released", {
-        detail: "The 15-minute hold ran out. Please check availability and book again.",
+        detail: `The ${HOLD_MINUTES}-minute hold ran out. Please check availability and book again.`,
         requestId,
       });
     case "payment_declined":

@@ -1,5 +1,6 @@
 import type { CatalogResponse } from "@/contracts/responses";
 import { isAllDaysOnSale, isDayOnSale, saleClock } from "@/domain/sales-window";
+import { publicEventInfo } from "./event-info";
 import type { Dependencies } from "./ports";
 import { failure, success, type UseCaseResult } from "./result";
 
@@ -17,12 +18,7 @@ export async function getCatalog(
   const { event, catalog } = found;
   const clock = saleClock(event.timezone, now);
   return success({
-    event: {
-      slug: event.slug,
-      name: event.name,
-      timezone: event.timezone,
-      currency: event.currency,
-    },
+    event: publicEventInfo(event),
     days: catalog.days.map((day) => ({ ...day, onSale: isDayOnSale(day, clock) })),
     allDaysOnSale: isAllDaysOnSale(catalog, clock),
     products: catalog.products

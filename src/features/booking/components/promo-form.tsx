@@ -2,11 +2,12 @@
 
 import { useState, type Dispatch } from "react";
 import type { QuoteResponse } from "@/contracts/responses";
-import { formatLongDate, formatMoney } from "../format";
+import { formatLongDate } from "../format";
 import { fieldIds } from "../state/field-targets";
 import type { Action } from "../state/types";
 import { Callout } from "./callout";
 import { input, label, quietButton, secondaryButton } from "./styles";
+import { useMoney } from "./event-context";
 
 interface Props {
   applied: string;
@@ -18,7 +19,10 @@ interface Props {
 type Outcome = QuoteResponse["promo"];
 
 // What the server said about the code, in plain words (SPEC §5.5). Never blocks continuing.
-function describe(outcome: Outcome): { tone: "success" | "info"; text: string } | null {
+function describe(
+  outcome: Outcome,
+  formatMoney: (cents: number) => string,
+): { tone: "success" | "info"; text: string } | null {
   switch (outcome.status) {
     case "none":
       return null;
@@ -54,7 +58,8 @@ function describe(outcome: Outcome): { tone: "success" | "info"; text: string } 
 
 export function PromoForm({ applied, outcome, checking, dispatch }: Props) {
   const [text, setText] = useState(applied);
-  const message = applied !== "" && outcome && !checking ? describe(outcome) : null;
+  const formatMoney = useMoney();
+  const message = applied !== "" && outcome && !checking ? describe(outcome, formatMoney) : null;
   const resultId = `${fieldIds.promo}-result`;
 
   return (

@@ -36,7 +36,10 @@ src/
     db/                    # schema, client, driver, migrate, seed, seed-data, migrations/
     repositories/          # catalog, promo, booking (the stock transaction), idempotency
     payments/simulated.ts, security/secrets.ts, system-clock.ts
-  lib/                     # env.ts (getEnv), logger.ts (JSON logs)
+  lib/                     # env.ts (getEnv), logger.ts (JSON logs), api-client.ts (browser fetch +
+                           # problem+json), site.ts (site name)
+  components/              # shared UI pieces (diya-icon)
+  features/events/         # landing page event list (GET /api/events)
   features/booking/        # booking UI (client): booking-flow.tsx, confirmation-view.tsx,
                            # state/ (types, reducer + cascades, selectors, to-request,
                            # storage, field-targets, step-checks), api/ (fetch client,
@@ -52,7 +55,7 @@ Request flow: **route → `getUseCases()` → use-case → domain (validate, pri
 
 API conventions (see README "API contract"): every POST that changes state goes through `idempotent()` (UUID `Idempotency-Key`); use-case failures are `AppError` kinds mapped to one HTTP status in `app/api/_lib/problem.ts`; stock conflicts are always 409; rule violations are 422 with `details[].code`.
 
-Stock and state rules (SPEC §8): the booking repository reserves the promo, then decrements pools **in pool-id order** with `UPDATE … WHERE remaining >= qty`, in one transaction. Holds end as `released_at` (expired) or `committed_at` (paid), never both. Expiry runs lazily on catalog/quote/create/pay and daily via the cron (`vercel.json`). Status changes are always guarded by `WHERE status = <expected>`.
+Stock and state rules (SPEC §8): the booking repository reserves the promo, then decrements pools **in pool-id order** with `UPDATE … WHERE remaining >= qty`, in one transaction. Holds end as `released_at` (expired) or `committed_at` (paid), never both. Expiry runs lazily on catalog/quote/create/pay/booking reads and daily via the cron (`vercel.json`). Status changes are always guarded by `WHERE status = <expected>`.
 
 Domain flow: **draft → `validateBooking` → `ValidatedBooking` → `priceBooking` → `Quote`.** Pricing only accepts a validated booking, so an invalid draft can never be priced. Rule checks return `Result` with _all_ issues (`IssueCollector`); programmer errors (e.g. negative cents) throw.
 
@@ -139,6 +142,15 @@ Enforced by tooling. `pnpm check` runs all of them, and CI (`.github/workflows/c
 - No `console.log` in `src/`: use `logger` from `src/lib/logger.ts` (structured JSON, event names like `health.database_unreachable`). Scripts may print.
 - Prettier (`.prettierrc.json`, 100 columns) formats everything. Run `pnpm format` before finishing.
 - Config is read through `getEnv()` (lazy, Zod-validated), never `process.env` directly in `src/`.
+
+No hard-coded event facts (P4):
+
+- Event name, venue, tagline, dates, timezone, currency, prices, stock and product rules come from the database through the API (`EventInfo` in `contracts/responses.ts`). UI components read the current event from `EventProvider` / `useEvent()` / `useMoney()` (`features/booking/components/event-context.tsx`).
+- Ages, limits and hold length come from domain constants (`CHILD_MIN_AGE`, `ADULT_PRICE_MIN_AGE`, `RESPONSIBLE_ADULT_MIN_AGE`, `MAX_ATTENDEES`, `HOLD_DURATION_MS`); UI age wording comes from `components/age-labels.ts`.
+- Messages (`contracts/messages.ts`) are built only from the issue's `params` and those constants. If a message needs a new fact, add it to the issue's params in the domain, not to the copy.
+- Money and dates are formatted only by `contracts/format.ts` (shared by API messages and UI), always with the event's currency.
+- Site-wide identity is `src/lib/site.ts` (`NEXT_PUBLIC_SITE_NAME`, `NEXT_PUBLIC_SITE_DESCRIPTION`). The landing page lists events from `GET /api/events`; no slug is written anywhere in `src/`.
+- Colour: every text/background pair is checked by `tests/ui/contrast.test.ts` against the tokens in `globals.css`. Gold text on cards or tints uses `bright-gold` (plain `primary` only directly on the page); never white text on gold. Add any new pair you introduce to that test.
 
 Design rules (SOLID as applied here):
 

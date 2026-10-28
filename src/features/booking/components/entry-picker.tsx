@@ -16,6 +16,7 @@ import { DayPicker } from "./day-picker";
 import { errorIdFor, FieldError } from "./field-error";
 import { Money } from "./money";
 import { priceLabel } from "./price-label";
+import { useEvent } from "./event-context";
 
 interface Props {
   attendee: AttendeeDraft;
@@ -40,6 +41,7 @@ export function EntryPicker({
   warnings,
   familyGroups,
 }: Props) {
+  const { currency } = useEvent();
   const { clientId, entry } = attendee;
   const dayPass = dayPassFor(catalog, band);
   const allDays = allDaysPassFor(catalog, band);
@@ -122,7 +124,7 @@ export function EntryPicker({
           option(
             "day_pass",
             dayPass.displayName,
-            priceLabel(dayPass),
+            priceLabel(dayPass, currency),
             "Choose the days below",
             dayPass.soldOut ? "Sold out" : null,
             () =>
@@ -150,7 +152,7 @@ export function EntryPicker({
           option(
             "family_pass",
             family.displayName,
-            `${priceLabel(family)} / day`,
+            `${priceLabel(family, currency)} / day`,
             "Shared with family members — set it up below",
             family.soldOut ? "Sold out" : null,
             () => {

@@ -13,6 +13,8 @@ import type { Action, BookingState } from "../state/types";
 import { DayPicker } from "./day-picker";
 import { errorIdFor, FieldError } from "./field-error";
 import { priceLabel } from "./price-label";
+import { useEvent } from "./event-context";
+import { BAND_RANGE } from "./age-labels";
 
 const LOW_STOCK = 10;
 
@@ -26,6 +28,7 @@ interface Props {
 // A per-person extra (Dinner, Garba): each person can pick only the days they
 // attend (X1) on which it runs (X2), and only if it suits their age (D14).
 export function ExtraSection({ product, state, dispatch, errorsFor }: Props) {
+  const { currency } = useEvent();
   const festival = state.festival;
   if (!festival) return null;
   const { rule } = product;
@@ -50,7 +53,7 @@ export function ExtraSection({ product, state, dispatch, errorsFor }: Props) {
           {product.displayName}
         </h3>
         <p className="text-sm tabular-nums text-bright-gold">
-          {priceLabel(product)}
+          {priceLabel(product, currency)}
           {stock && <span className="ml-2 text-white/85">· {stock}</span>}
         </p>
       </div>
@@ -95,7 +98,7 @@ export function ExtraSection({ product, state, dispatch, errorsFor }: Props) {
             <li key={attendee.clientId}>
               <DayPicker
                 id={fieldId}
-                legend={`${name}${info.band === "infant" ? " (under 5, optional)" : ""}`}
+                legend={`${name}${info.band === "infant" ? ` (${BAND_RANGE.infant}, optional)` : ""}`}
                 selected={selected}
                 invalid={errors.length > 0}
                 describedBy={errors.length > 0 ? errorIdFor(fieldId) : undefined}

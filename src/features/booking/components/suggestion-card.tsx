@@ -17,10 +17,12 @@ interface Props {
   catalog: CatalogResponse;
   state: BookingState;
   dispatch: Dispatch<Action>;
+  // The card disappears once applied, so the caller moves focus somewhere sensible.
+  onApplied: () => void;
 }
 
 // D3 / D4: the server spots a cheaper option; the customer decides with one click.
-export function SuggestionCard({ suggestion, catalog, state, dispatch }: Props) {
+export function SuggestionCard({ suggestion, catalog, state, dispatch, onApplied }: Props) {
   if (suggestion.code === "SWITCH_TO_ALL_DAYS") {
     const attendee = state.attendees.find((a) => a.clientId === suggestion.attendeeClientId);
     const product = productById(catalog, suggestion.toProductId);
@@ -34,13 +36,14 @@ export function SuggestionCard({ suggestion, catalog, state, dispatch }: Props) 
         <button
           type="button"
           className={secondaryButton}
-          onClick={() =>
+          onClick={() => {
             dispatch({
               type: "SET_ENTRY",
               clientId: attendee.clientId,
               entry: { kind: "all_days", productId: product.id },
-            })
-          }
+            });
+            onApplied();
+          }}
         >
           <span>
             Save <Money cents={suggestion.savingsCents} /> with the {product.displayName}
@@ -74,7 +77,10 @@ export function SuggestionCard({ suggestion, catalog, state, dispatch }: Props) 
         <button
           type="button"
           className={secondaryButton}
-          onClick={() => dispatch({ type: "SPLIT_FAMILY_GROUP", id: group.id, passes })}
+          onClick={() => {
+            dispatch({ type: "SPLIT_FAMILY_GROUP", id: group.id, passes });
+            onApplied();
+          }}
         >
           <span>
             Switch to day passes and save <Money cents={suggestion.savingsCents} />

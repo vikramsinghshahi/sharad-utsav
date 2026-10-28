@@ -51,7 +51,7 @@ describe("age rules (§5.1)", () => {
     expect(firstIssue(result)).toEqual({
       code: "AGE_BAND_MISMATCH",
       path: ["attendees", 1, "entry", "productId"],
-      params: { age: 7, ageBand: "child" },
+      params: { age: 7, ageBand: "child", onDate: "2026-11-10" },
     });
   });
 

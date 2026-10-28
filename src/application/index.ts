@@ -4,6 +4,7 @@ import { createBooking } from "./create-booking";
 import { expireHolds } from "./expire-holds";
 import { getBooking } from "./get-booking";
 import { getCatalog } from "./get-catalog";
+import { listEvents } from "./list-events";
 import { payBooking } from "./pay-booking";
 import type { Dependencies } from "./ports";
 import { quoteBooking } from "./quote-booking";
@@ -15,6 +16,7 @@ export type { Dependencies, IdempotencyStore, StoredResponse } from "./ports";
 // real adapters; tests pass a test database or fakes).
 export function createUseCases(deps: Dependencies) {
   return {
+    listEvents: () => listEvents(deps),
     getCatalog: (slug: string) => getCatalog(deps, slug),
     quoteBooking: (slug: string, draft: BookingDraft) => quoteBooking(deps, slug, draft),
     createBooking: (request: CreateBookingRequest) => createBooking(deps, request),

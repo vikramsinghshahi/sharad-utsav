@@ -28,6 +28,7 @@ import { PayStep } from "./steps/pay-step";
 import { ReviewStep } from "./steps/review-step";
 import type { StepProps } from "./steps/step-props";
 import { WhoStep } from "./steps/who-step";
+import { EventProvider } from "./components/event-context";
 
 export function BookingFlow({ slug }: { slug: string }) {
   const { state: catalogState, reload } = useCatalog(slug);
@@ -72,6 +73,8 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
   const [shown, setShown] = useState<{ step: Step; clientIds: string[] } | null>(null);
   const setErrorsShownFor = (step: Step | null) =>
     setShown(step === null ? null : { step, clientIds: state.attendees.map((a) => a.clientId) });
+  // Bumped when "Next" is blocked, so the error summary takes focus again. UI-only.
+  const [focusRequest, setFocusRequest] = useState(0);
   const online = useOnlineStatus();
   const today = todayIn(catalog.event.timezone, new Date());
 
@@ -213,6 +216,7 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
     const step = state.step;
     if (blockingIssues(step).length > 0) {
       setErrorsShownFor(step);
+      setFocusRequest((n) => n + 1);
       return;
     }
     if (step === "pay") {
@@ -230,7 +234,7 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
   const stepIndex = STEPS.indexOf(state.step);
 
   return (
-    <>
+    <EventProvider value={catalog.event}>
       <OfflineBanner
         online={online}
         requestFailed={quote.status === "error" && quote.network}
@@ -248,7 +252,7 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
             >
               {catalog.event.name}
             </Link>
-            <p className="text-sm text-white/75">Radha Krishna Temple · Allen, Texas</p>
+            {catalog.event.venue && <p className="text-sm text-white/75">{catalog.event.venue}</p>}
           </div>
         </header>
 
@@ -274,6 +278,8 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
             ) : (
               <>
                 <ErrorSummary
+                  focusRequest={focusRequest}
+                  fallbackFocusId={STEP_HEADING_ID}
                   items={visibleIssues.map((i) => ({
                     fieldId: i.fieldId,
                     message: i.message,
@@ -327,7 +333,11 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
           </main>
 
           <StickySummary
-            quote={quote}
+            quote={
+              state.hold?.quote
+                ? { status: "ready", quote: state.hold.quote, key: state.hold.bookingId }
+                : quote
+            }
             catalog={catalog}
             state={state}
             action={state.hydrated ? action : null}
@@ -336,7 +346,7 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
           />
         </div>
       </div>
-    </>
+    </EventProvider>
   );
 }
 
@@ -350,8 +360,17 @@ function primaryAction(
   if (state.step === "pay") {
     // The payment panel holds the Pay and decline buttons; a second Pay here would only confuse.
     if (state.hold) return null;
+    // A $0 booking confirms straight away (D10): there is no payment to continue to.
+    const free = quote.status === "ready" && quote.quote.totalCents === 0;
+    const creating = state.inFlight === "create";
     return {
-      label: state.inFlight === "create" ? "Holding your places…" : "Continue to payment",
+      label: free
+        ? creating
+          ? "Confirming…"
+          : "Confirm booking"
+        : creating
+          ? "Holding your places…"
+          : "Continue to payment",
       onClick: next,
       busy: state.inFlight === "create",
       disabled: checking,

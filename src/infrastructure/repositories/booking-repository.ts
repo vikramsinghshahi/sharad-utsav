@@ -12,6 +12,7 @@ import {
   bookingLines,
   bookings,
   eventDays,
+  events,
   inventoryHolds,
   inventoryPools,
   outbox,
@@ -31,7 +32,9 @@ class PromoUnavailableError extends Error {}
 interface PoolAllocation {
   poolId: string;
   qty: number;
+  productId: string;
   productCode: string;
+  productName: string;
   date: IsoDate | null;
 }
 
@@ -208,8 +211,10 @@ async function allocatePools(
       id: inventoryPools.id,
       productId: inventoryPools.productId,
       eventDayId: inventoryPools.eventDayId,
+      productName: products.displayName,
     })
     .from(inventoryPools)
+    .innerJoin(products, eq(products.id, inventoryPools.productId))
     .where(inArray(inventoryPools.productId, [...new Set(demand.map((d) => d.productId))]));
 
   const byPool = new Map<string, PoolAllocation>();
@@ -223,7 +228,9 @@ async function allocatePools(
     const allocation = byPool.get(pool.id) ?? {
       poolId: pool.id,
       qty: 0,
+      productId: item.productId,
       productCode: item.productCode,
+      productName: pool.productName,
       date: pool.eventDayId === null ? null : item.date,
     };
     allocation.qty += item.qty;
@@ -256,7 +263,9 @@ async function decrementPools(tx: Tx, allocations: readonly PoolAllocation[]): P
     const remaining = pool?.remaining ?? 0;
     throw new StockShortageError({
       code: remaining <= 0 ? "SOLD_OUT" : "INSUFFICIENT_STOCK",
+      productId: allocation.productId,
       productCode: allocation.productCode,
+      productName: allocation.productName,
       date: allocation.date,
       remaining,
     });
@@ -396,8 +405,9 @@ function sumByPool(holds: readonly { poolId: string; qty: number }[]): [string, 
 
 async function findDetails(db: Db, bookingId: string): Promise<BookingDetails | null> {
   const [row] = await db
-    .select({ booking: bookings, promoCode: promoCodes.code })
+    .select({ booking: bookings, event: events, promoCode: promoCodes.code })
     .from(bookings)
+    .innerJoin(events, eq(events.id, bookings.eventId))
     .leftJoin(promoCodes, eq(promoCodes.id, bookings.promoCodeId))
     .where(eq(bookings.id, bookingId))
     .limit(1);
@@ -435,6 +445,14 @@ async function findDetails(db: Db, bookingId: string): Promise<BookingDetails | 
   const b = row.booking;
   return {
     id: b.id,
+    event: {
+      slug: row.event.slug,
+      name: row.event.name,
+      venue: row.event.venue,
+      tagline: row.event.tagline,
+      timezone: row.event.timezone,
+      currency: row.event.currency,
+    },
     status: b.status,
     accessTokenHash: b.accessTokenHash,
     confirmationCode: b.confirmationCode,

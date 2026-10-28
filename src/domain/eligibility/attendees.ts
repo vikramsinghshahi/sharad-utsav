@@ -67,7 +67,7 @@ function validateEntry(
     case "day_pass": {
       const product = resolveProduct(entry.productId, ctx, [...path, "productId"], isDayPass);
       if (!product.ok) return product;
-      const bandIssue = checkAgeBand(product.value, band, age, [...path, "productId"]);
+      const bandIssue = checkAgeBand(product.value, band, age, ctx, [...path, "productId"]);
       if (bandIssue) return bandIssue;
       const dates = validateDates(entry.dates, ctx, [...path, "dates"]);
       if (!dates.ok) return dates;
@@ -77,7 +77,7 @@ function validateEntry(
     case "all_days": {
       const product = resolveProduct(entry.productId, ctx, [...path, "productId"], isAllDaysPass);
       if (!product.ok) return product;
-      const bandIssue = checkAgeBand(product.value, band, age, [...path, "productId"]);
+      const bandIssue = checkAgeBand(product.value, band, age, ctx, [...path, "productId"]);
       if (bandIssue) return bandIssue;
       if (!isAllDaysOnSale(ctx.catalog, ctx.clock)) {
         return fail(issue("DAY_NOT_ON_SALE", path, { reason: "all_days_closed" }));
@@ -92,8 +92,15 @@ function checkAgeBand(
   product: PassProduct,
   band: AgeBand,
   age: number,
+  ctx: EligibilityContext,
   path: IssuePath,
 ): Result<never> | undefined {
   if (product.rule.eligibleAgeBand === band) return undefined;
-  return fail(issue("AGE_BAND_MISMATCH", path, { age, ageBand: band }));
+  return fail(
+    issue("AGE_BAND_MISMATCH", path, {
+      age,
+      ageBand: band,
+      onDate: ctx.ageReferenceDate,
+    }),
+  );
 }

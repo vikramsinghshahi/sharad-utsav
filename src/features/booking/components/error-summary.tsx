@@ -15,23 +15,37 @@ interface Props {
   items: readonly SummaryItem[];
   // Lets the flow switch steps when a problem lives on another step. Returns true if it did.
   onSelect?: (item: SummaryItem) => boolean;
+  // Bumped each time the user is blocked (e.g. presses "Next" again), so focus returns
+  // to the summary even when its contents haven't changed.
+  focusRequest?: number;
+  // Where focus goes after a one-click fix removes the field it was about.
+  fallbackFocusId: string;
 }
 
-export function ErrorSummary({ items, onSelect }: Props) {
+export function ErrorSummary({ items, onSelect, focusRequest = 0, fallbackFocusId }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const count = items.length;
 
   useEffect(() => {
     if (count > 0) ref.current?.focus();
-  }, [count]);
+  }, [count, focusRequest]);
 
   if (count === 0) return null;
 
-  const focusField = (fieldId: string) => {
+  const focusField = (fieldId: string): boolean => {
     const element = document.getElementById(fieldId);
-    if (!element) return;
+    if (!element) return false;
     element.scrollIntoView({ block: "center" });
     element.focus({ preventScroll: true });
+    return true;
+  };
+
+  // After a fix the summary (and maybe the field) disappears; keep focus somewhere useful.
+  const applyFix = (item: SummaryItem) => {
+    item.onFix?.();
+    requestAnimationFrame(() => {
+      if (!focusField(item.fieldId)) focusField(fallbackFocusId);
+    });
   };
 
   return (
@@ -64,7 +78,7 @@ export function ErrorSummary({ items, onSelect }: Props) {
             {item.fixLabel && item.onFix && (
               <button
                 type="button"
-                onClick={item.onFix}
+                onClick={() => applyFix(item)}
                 className="min-h-11 rounded-lg border border-line-strong px-3 py-1.5 font-medium text-white hover:border-bright-gold hover:text-bright-gold"
               >
                 {item.fixLabel}

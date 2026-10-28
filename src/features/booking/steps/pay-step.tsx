@@ -10,6 +10,7 @@ import { fieldIds } from "../state/field-targets";
 import { findBookerAttendee } from "../state/selectors";
 import { STEP_TITLES, type BookerDraft } from "../state/types";
 import type { StepProps } from "./step-props";
+import { RESPONSIBLE_AGE } from "../components/age-labels";
 
 interface Props extends StepProps {
   onPay: (outcome: "succeed" | "decline") => void;
@@ -27,7 +28,7 @@ const FIELDS: { name: TextField; label: string; type: string; autoComplete: stri
   { name: "dateOfBirth", label: "Your date of birth", type: "date", autoComplete: "bday" },
 ];
 
-// Step 5: the person paying (18+, A5), then the 15-minute hold and the simulated payment.
+// Step 5: the person paying (18+, A5), then the hold (HOLD_DURATION_MS) and the simulated payment.
 export function PayStep(props: Props) {
   const { state, dispatch, today, errorsFor, onPay, onHoldExpired, onAddBookerAsAttendee } = props;
   const { booker, hold, error, inFlight } = state;
@@ -40,6 +41,13 @@ export function PayStep(props: Props) {
   useEffect(() => {
     if (failed) feedback.current?.focus();
   }, [failed, error]);
+
+  // Once places are held, focus the payment panel so Pay is the next Tab stop.
+  const payHeading = useRef<HTMLHeadingElement>(null);
+  const heldBookingId = hold?.bookingId;
+  useEffect(() => {
+    if (heldBookingId) payHeading.current?.focus();
+  }, [heldBookingId]);
 
   if (hold) {
     const changed = hold.reviewedTotalCents !== null && hold.reviewedTotalCents !== hold.totalCents;
@@ -56,7 +64,12 @@ export function PayStep(props: Props) {
         )}
 
         <section className={card} aria-labelledby="pay-title">
-          <h3 id="pay-title" className="font-serif text-2xl font-semibold">
+          <h3
+            id="pay-title"
+            ref={payHeading}
+            tabIndex={-1}
+            className="font-serif text-2xl font-semibold focus-visible:outline-none"
+          >
             Payment
           </h3>
           <p className="mt-1 text-sm text-white/80">
@@ -131,7 +144,8 @@ export function PayStep(props: Props) {
   return (
     <div className="space-y-4">
       <p className="text-white/85">
-        The person paying must be 18 or over. We&apos;ll send the confirmation to this email.
+        The person paying must be {RESPONSIBLE_AGE} or over. We&apos;ll send the confirmation to
+        this email.
       </p>
 
       {error?.kind === "network" && error.during === "create" && (

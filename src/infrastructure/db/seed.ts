@@ -41,7 +41,13 @@ async function upsertEvent(tx: Tx, orgId: string): Promise<string> {
     .values({ ...EVENT, orgId })
     .onConflictDoUpdate({
       target: events.slug,
-      set: { name: EVENT.name, timezone: EVENT.timezone, currency: EVENT.currency },
+      set: {
+        name: EVENT.name,
+        venue: EVENT.venue,
+        tagline: EVENT.tagline,
+        timezone: EVENT.timezone,
+        currency: EVENT.currency,
+      },
     })
     .returning({ id: events.id });
   if (!event) throw new Error("Failed to upsert event");

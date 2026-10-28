@@ -1,3 +1,4 @@
+import type { EventInfo } from "@/contracts/responses";
 import type { AgeBand } from "@/domain/age";
 import type { BookingStatus, EntryKind } from "@/domain/booking";
 import type { IsoDate } from "@/domain/calendar";
@@ -15,12 +16,14 @@ export interface Clock {
   now(): Date;
 }
 
-export interface EventRecord {
+export interface EventRecord extends EventInfo {
   id: string;
-  slug: string;
-  name: string;
-  timezone: string;
-  currency: string;
+}
+
+export interface EventSummary extends EventRecord {
+  firstDay: IsoDate;
+  lastDay: IsoDate;
+  lowestEntryPriceCents: number | null;
 }
 
 export interface EventCatalog {
@@ -30,6 +33,8 @@ export interface EventCatalog {
 
 export interface CatalogRepository {
   findBySlug(slug: string): Promise<EventCatalog | null>;
+  // Every event that has at least one festival day, earliest first.
+  listEvents(): Promise<EventSummary[]>;
 }
 
 export type PromoRecord = Promo & { id: string };
@@ -83,6 +88,7 @@ export interface PaymentRecord {
 
 export interface BookingDetails {
   id: string;
+  event: EventInfo;
   status: BookingStatus;
   accessTokenHash: string;
   confirmationCode: string | null;

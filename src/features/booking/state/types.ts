@@ -1,4 +1,4 @@
-import type { ProblemDetails } from "@/contracts/responses";
+import type { ProblemDetails, QuoteResponse } from "@/contracts/responses";
 import type { AgeBand } from "@/domain/age";
 import type { AttendeeInput, EntryInput, FamilyGroupInput } from "@/domain/booking";
 
@@ -82,6 +82,9 @@ export interface Hold {
   // The amount that will be charged: the create response's own quote total (D15).
   totalCents: number;
   reviewedTotalCents: number | null; // the total the user last saw on Review (D15)
+  // That quote in full, so the summary agrees with the amount charged. Kept in memory
+  // only: after a refresh the summary falls back to a fresh quote.
+  quote?: QuoteResponse;
 }
 
 export type FlowError =

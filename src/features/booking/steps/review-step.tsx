@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Callout } from "../components/callout";
 import { Money } from "../components/money";
 import { PromoForm } from "../components/promo-form";
@@ -7,11 +8,14 @@ import { SuggestionCard } from "../components/suggestion-card";
 import { card } from "../components/styles";
 import { ageInfo, allDaysPassFor, attendeeName } from "../state/selectors";
 import type { StepProps } from "./step-props";
+import { HOLD_DURATION_MS } from "@/domain/booking";
+import { formatMinutes } from "../format";
 
 // Step 4: the server's quote, promo code, and any money-saving suggestions (D3, D4).
 export function ReviewStep({ state, dispatch, catalog, quote }: StepProps) {
   const current = quote.status === "ready" ? quote.quote : null;
   const shown = current ?? (quote.status === "loading" ? quote.previous : null);
+  const linesHeading = useRef<HTMLHeadingElement>(null);
 
   const warnings = (current?.warnings ?? []).map((w, i) => {
     if (w.code === "POSSIBLE_DUPLICATE_ATTENDEE") {
@@ -47,7 +51,8 @@ export function ReviewStep({ state, dispatch, catalog, quote }: StepProps) {
           <strong className="font-semibold">
             Your places were released — re-check availability.
           </strong>{" "}
-          The 15-minute hold ran out. The prices below are fresh; continue when you&apos;re ready.
+          They were held for {formatMinutes(HOLD_DURATION_MS)}. The prices below are fresh; continue
+          when you&apos;re ready.
         </Callout>
       )}
 
@@ -56,7 +61,12 @@ export function ReviewStep({ state, dispatch, catalog, quote }: StepProps) {
         className={card}
         aria-busy={quote.status === "loading" || undefined}
       >
-        <h3 id="review-lines-title" className="font-serif text-2xl font-semibold">
+        <h3
+          id="review-lines-title"
+          ref={linesHeading}
+          tabIndex={-1}
+          className="font-serif text-2xl font-semibold focus-visible:outline-none"
+        >
           Your booking
         </h3>
         <div className="mt-3">
@@ -95,6 +105,7 @@ export function ReviewStep({ state, dispatch, catalog, quote }: StepProps) {
               catalog={catalog}
               state={state}
               dispatch={dispatch}
+              onApplied={() => linesHeading.current?.focus()}
             />
           ))}
         </section>

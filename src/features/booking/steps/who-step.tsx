@@ -1,8 +1,10 @@
+import { useEffect, useRef } from "react";
 import { MAX_ATTENDEES } from "@/domain/booking";
 import { AttendeeCard } from "../components/attendee-card";
-import { DiyaIcon } from "../components/diya-icon";
+import { DiyaIcon } from "@/components/diya-icon";
 import { secondaryButton } from "../components/styles";
 import { formatDay } from "../format";
+import { fieldIds } from "../state/field-targets";
 import type { StepProps } from "./step-props";
 
 // Step 1: everyone who is coming, with a date of birth each (SPEC §4).
@@ -10,7 +12,27 @@ export function WhoStep({ state, dispatch, catalog, today, errorsFor }: StepProp
   const firstDay = catalog.days[0]?.date ?? "";
   const count = state.attendees.length;
   const full = count >= MAX_ATTENDEES;
-  const add = () => dispatch({ type: "ADD_ATTENDEE", clientId: crypto.randomUUID() });
+  // Keyboard focus follows the change instead of dropping to <body>: a new card's first
+  // name, or after a removal the next card (else the previous one, else "Add").
+  const focusNext = useRef<string | null>(null);
+  useEffect(() => {
+    if (focusNext.current === null) return;
+    document.getElementById(focusNext.current)?.focus();
+    focusNext.current = null;
+  }, [state.attendees]);
+
+  const add = () => {
+    const clientId = crypto.randomUUID();
+    focusNext.current = fieldIds.attendeeField(clientId, "firstName");
+    dispatch({ type: "ADD_ATTENDEE", clientId });
+  };
+  const remove = (index: number) => {
+    const removed = state.attendees[index];
+    if (!removed) return;
+    const neighbour = state.attendees[index + 1] ?? state.attendees[index - 1];
+    focusNext.current = neighbour ? fieldIds.attendee(neighbour.clientId) : fieldIds.addPerson;
+    dispatch({ type: "REMOVE_ATTENDEE", clientId: removed.clientId });
+  };
 
   return (
     <div className="space-y-4">
@@ -27,7 +49,12 @@ export function WhoStep({ state, dispatch, catalog, today, errorsFor }: StepProp
             Start with yourself or whoever is coming. Under-5s come free, but please add them so our
             volunteers know who to expect.
           </p>
-          <button id="add-person" type="button" onClick={add} className={`${secondaryButton} mt-5`}>
+          <button
+            id={fieldIds.addPerson}
+            type="button"
+            onClick={add}
+            className={`${secondaryButton} mt-5`}
+          >
             + Add the first person
           </button>
         </div>
@@ -43,12 +70,13 @@ export function WhoStep({ state, dispatch, catalog, today, errorsFor }: StepProp
                 today={today}
                 dispatch={dispatch}
                 errorsFor={errorsFor}
+                onRemove={() => remove(index)}
               />
             ))}
           </ul>
           <div className="flex flex-wrap items-center gap-3">
             <button
-              id="add-person"
+              id={fieldIds.addPerson}
               type="button"
               onClick={add}
               disabled={full}

@@ -8,7 +8,7 @@ interface Props {
   onExpire: () => void;
 }
 
-// mm:ss until the 15-minute hold ends (S3). Calls onExpire once at zero.
+// mm:ss until the hold (HOLD_DURATION_MS) ends (S3). Calls onExpire once at zero.
 export function HoldCountdown({ expiresAt, onExpire }: Props) {
   const deadline = Date.parse(expiresAt);
   const [now, setNow] = useState(() => Date.now());

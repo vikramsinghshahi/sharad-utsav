@@ -1,11 +1,11 @@
 import type { CatalogResponse, QuoteResponse } from "@/contracts/responses";
 import type { QuoteState } from "../api/use-quote";
-import { formatMoney } from "../format";
 import type { BookingState } from "../state/types";
 import { Money } from "./money";
 import { QuoteLines, QuoteTotals } from "./quote-lines";
 import { Skeleton } from "./skeleton";
 import { primaryButton } from "./styles";
+import { useMoney } from "./event-context";
 
 export interface PrimaryAction {
   label: string;
@@ -39,6 +39,7 @@ export function StickySummary({
 }: Props) {
   const shown = shownQuote(quote);
   const updating = quote.status === "loading";
+  const formatMoney = useMoney();
 
   const button = action && (
     <button

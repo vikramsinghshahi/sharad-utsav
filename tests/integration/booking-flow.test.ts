@@ -94,6 +94,15 @@ describe("holds and expiry (S3, D16)", () => {
     const garba = catalog.ok ? catalog.value.products.find((p) => p.code === "GARBA") : undefined;
     expect(garba).toMatchObject({ remaining: 2, soldOut: false });
   });
+
+  it("reading a lapsed booking shows it as expired and frees its stock", async () => {
+    const pid = await productIds();
+    const booking = await created(garbaBooking(pid));
+    clock.advanceMinutes(16);
+    const details = await useCases.getBooking(booking.bookingId, booking.accessToken);
+    expect(details.ok && details.value.status).toBe("expired");
+    expect(await remaining("GARBA")).toBe(2);
+  });
 });
 
 describe("payment (SPEC §8.1)", () => {
@@ -211,5 +220,17 @@ describe("special cases", () => {
       sql`select count(*)::int as n from booking_lines where family_group_id is not null`,
     );
     expect(linked.rows[0]?.n).toBe(1);
+  });
+});
+
+describe("listing events", () => {
+  it("drops an event once its last day has passed in its own timezone", async () => {
+    expect((await useCases.listEvents()).events).toHaveLength(1);
+    // 15 Nov, 00:30 in Texas (06:30 UTC): the festival ended on the 14th.
+    clock.current = new Date("2026-11-15T06:30:00Z");
+    expect((await useCases.listEvents()).events).toHaveLength(0);
+    // Still the 14th in Texas at 05:30 UTC: the last day is under way.
+    clock.current = new Date("2026-11-15T05:30:00Z");
+    expect((await useCases.listEvents()).events).toHaveLength(1);
   });
 });

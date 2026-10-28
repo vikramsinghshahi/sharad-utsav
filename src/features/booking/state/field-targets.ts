@@ -21,6 +21,7 @@ export const fieldIds = {
   bookingExtra: (productId: string) => `extra-${productId}`,
   booker: (field: string) => `booker-${field}`,
   promo: "promo-code",
+  addPerson: "add-person",
 };
 
 type Source = Pick<

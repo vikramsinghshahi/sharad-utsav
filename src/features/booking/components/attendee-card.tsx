@@ -14,10 +14,12 @@ interface Props {
   today: IsoDate;
   dispatch: Dispatch<Action>;
   errorsFor: (fieldId: string) => readonly string[];
+  onRemove: () => void;
 }
 
 // One person: name, date of birth, and a live age badge (ages as of the first day, D1).
-export function AttendeeCard({ attendee, index, firstDay, today, dispatch, errorsFor }: Props) {
+export function AttendeeCard(props: Props) {
+  const { attendee, index, firstDay, today, dispatch, errorsFor, onRemove } = props;
   const { clientId } = attendee;
   const info = ageInfo(attendee.dateOfBirth, firstDay);
   const title = attendee.firstName.trim() || `Person ${index + 1}`;
@@ -49,11 +51,7 @@ export function AttendeeCard({ attendee, index, firstDay, today, dispatch, error
           </h3>
           <AgeBadge info={info} />
         </div>
-        <button
-          type="button"
-          className={`${quietButton} -mt-2 -mr-2`}
-          onClick={() => dispatch({ type: "REMOVE_ATTENDEE", clientId })}
-        >
+        <button type="button" className={`${quietButton} -mt-2 -mr-2`} onClick={onRemove}>
           Remove<span className="sr-only"> {title}</span>
         </button>
       </div>

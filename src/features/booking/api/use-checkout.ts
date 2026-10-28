@@ -61,6 +61,7 @@ export function useCheckout({
             holdExpiresAt: created.holdExpiresAt,
             totalCents: created.quote.totalCents,
             reviewedTotalCents,
+            quote: created.quote,
           },
         });
         return;
@@ -88,11 +89,11 @@ export function useCheckout({
     }
   }
 
-  // The 409 names no product, so compare the draft with fresh stock to say which one ran out.
+  // Reload stock, then place the server's shortage on the field it concerns.
   async function stockError(problem: ProblemDetails): Promise<FlowError> {
     const fresh = await fetchCatalog(slug);
     const fallback = problem.detail ?? "Something in this booking has sold out.";
-    const issue = fresh.ok ? stockIssues(state, fresh.data, fallback)[0] : undefined;
+    const issue = fresh.ok ? stockIssues(state, fresh.data, problem)[0] : undefined;
     if (!issue) return { kind: "stock", message: fallback, step: "review" };
     return {
       kind: "stock",

@@ -15,7 +15,9 @@ export interface StockDemand {
 // Not enough left (S2): the whole booking is rejected, naming the item.
 export interface StockShortage {
   code: "SOLD_OUT" | "INSUFFICIENT_STOCK";
+  productId: string;
   productCode: string;
+  productName: string;
   date: IsoDate | null;
   remaining: number;
 }
@@ -52,11 +54,14 @@ export function findShortage(
   }
 
   for (const [productId, { code, qty }] of totals) {
-    const remaining = catalog.products.find((p) => p.id === productId)?.remaining ?? 0;
+    const product = catalog.products.find((p) => p.id === productId);
+    const remaining = product?.remaining ?? 0;
     if (qty <= remaining) continue;
     return {
       code: remaining <= 0 ? "SOLD_OUT" : "INSUFFICIENT_STOCK",
+      productId,
       productCode: code,
+      productName: product?.displayName ?? code,
       date: null,
       remaining: Math.max(remaining, 0),
     };
