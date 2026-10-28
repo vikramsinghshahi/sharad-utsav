@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* Brand tokens from the brief (§2 Colour theme). */
+@theme inline {
+  --color-primary-dark: #2c2c2c;
+  --color-primary: #c99b24;
+  --color-gold: #bc9226;
+  --color-bright-gold: #d1ac3e;
+  --color-cream: #fdf3e4;
+  --color-heading: #291900;
+  --color-primary-text: #645743;
+  --color-success: #28a736;
+  --color-error: #ef1f1f;
+
+  --font-serif: var(--font-cormorant);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--color-primary-dark);
+  color: #ffffff;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
