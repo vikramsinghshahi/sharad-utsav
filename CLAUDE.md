@@ -4,7 +4,7 @@ Guidance for working in this repository.
 
 ## Current state (read first)
 
-**P0–P2 are built: skeleton, domain rules, and the booking API (tested). The booking UI (P3) is not built yet.**
+**P0–P3 are built: skeleton, domain rules, the booking API (tested), and the booking UI.**
 
 - `docs/SPEC.md` — the working engineering spec. **This is the source of truth** for architecture, rules, API, schema, and the delivery plan.
 - `docs/assessment-senior-fullstack-ticketing.md` — the original brief.
@@ -15,7 +15,8 @@ Built so far:
 ```
 src/
   app/
-    page.tsx               # placeholder home page
+    page.tsx               # landing page with "Book tickets"
+    (booking)/events/[slug]/book/page.tsx, (booking)/bookings/[id]/page.tsx  # thin pages
     api/                   # thin route handlers: parse → use-case → respond
       _lib/                # route() wrapper (request id, logging, 500s), readJson,
                            # problem+json mapping, idempotent() for POSTs
@@ -36,9 +37,13 @@ src/
     repositories/          # catalog, promo, booking (the stock transaction), idempotency
     payments/simulated.ts, security/secrets.ts, system-clock.ts
   lib/                     # env.ts (getEnv), logger.ts (JSON logs)
+  features/booking/        # booking UI (client): booking-flow.tsx, confirmation-view.tsx,
+                           # state/ (types, reducer + cascades, selectors, to-request,
+                           # storage, field-targets, step-checks), api/ (fetch client,
+                           # use-catalog, use-quote, use-checkout), steps/, components/
 scripts/                   # next-launch.mjs (port), db-migrate.ts, db-seed.ts
 tests/
-  domain/, lib/, infrastructure/   # unit tests (pnpm test)
+  domain/, lib/, infrastructure/, features/   # unit tests (pnpm test)
   integration/                     # real Postgres (pnpm test:integration)
   fixtures/booking.ts              # catalog built from seed-data.ts
 ```
