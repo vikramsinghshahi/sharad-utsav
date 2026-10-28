@@ -28,6 +28,20 @@
   --font-sans: var(--font-inter);
 }
 
+/* Phones: the sticky bottom bar (total + next step) is about 76px tall. Keep anything
+   that gets focus or is scrolled to clear of it (WCAG 2.4.11 Focus Not Obscured). */
+:root {
+  --sticky-bar-height: 5.5rem;
+}
+@media (max-width: 1023.98px) {
+  html {
+    scroll-padding-bottom: calc(var(--sticky-bar-height) + 1rem);
+  }
+  :where(a, button, input, select, textarea, [tabindex]) {
+    scroll-margin-bottom: calc(var(--sticky-bar-height) + 1rem);
+  }
+}
+
 body {
   background: var(--color-primary-dark);
   color: #ffffff;
@@ -40,6 +54,14 @@ body {
   :focus-visible {
     outline: 2px solid var(--color-bright-gold);
     outline-offset: 3px;
+  }
+
+  /* Cormorant's default old-style figures read oddly in "Person 1" and totals. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-variant-numeric: lining-nums;
   }
 
   /* Native date pickers on the dark ground. */
@@ -72,9 +94,27 @@ body {
   }
 }
 
+@keyframes diya-light {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .diya-flame {
   transform-origin: 50% 100%;
-  animation: diya-flicker 2.4s ease-in-out infinite;
+  animation:
+    diya-light 200ms ease-out both,
+    diya-flicker 2.4s ease-in-out 200ms infinite;
+}
+
+/* A soft halo of light around a lit lamp. */
+.diya-glow {
+  filter: drop-shadow(0 0 4px rgb(209 172 62 / 0.85)) drop-shadow(0 0 10px rgb(209 172 62 / 0.45));
 }
 
 .rise-in {

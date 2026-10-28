@@ -287,3 +287,94 @@ describe("holds", () => {
     expect(state.notices.at(-1)?.text).toContain("held places were let go");
   });
 });
+
+describe("no-op actions keep the same state object", () => {
+  it("reloading an identical catalog, or going to the current step, changes nothing", () => {
+    const state = run([loaded, ...person("a", "Priya", DOB.adult40)]);
+    expect(run([loaded], state)).toBe(state);
+    expect(run([{ type: "GO_TO_STEP", step: state.step }], state)).toBe(state);
+    expect(run([{ type: "SET_PROMO", code: "" }], state)).toBe(state);
+  });
+});
+
+describe("notices are withdrawn when they stop being true", () => {
+  it("changing the DOB back and choosing a ticket clears the band-change note", () => {
+    const changed = run([
+      loaded,
+      ...person("c", "Aarav", DOB.adult40),
+      dayPass("c", IDS.dayAdult, ["2026-11-11"]),
+      { type: "SET_DOB", clientId: "c", dateOfBirth: DOB.child7 },
+    ]);
+    expect(changed.notices).toHaveLength(1);
+    const back = run(
+      [
+        { type: "SET_DOB", clientId: "c", dateOfBirth: DOB.adult40 },
+        dayPass("c", IDS.dayAdult, ["2026-11-11"]),
+      ],
+      changed,
+    );
+    expect(back.notices).toEqual([]);
+  });
+
+  it("a note about one person survives changes to someone else", () => {
+    const state = run([
+      loaded,
+      ...person("c", "Aarav", DOB.adult40),
+      ...person("a", "Priya", DOB.adult40),
+      dayPass("c", IDS.dayAdult, ["2026-11-11"]),
+      { type: "SET_DOB", clientId: "c", dateOfBirth: DOB.child7 },
+      dayPass("a", IDS.dayAdult, ["2026-11-12"]),
+    ]);
+    expect(state.notices.map((n) => n.clientId)).toEqual(["c"]);
+  });
+});
+
+describe("choosing a family pass on a person's card", () => {
+  const choose = (clientId: string, id: string, date = "2026-11-11"): Action => ({
+    type: "CHOOSE_FAMILY_PASS",
+    clientId,
+    newGroup: { id, productId: IDS.family, date },
+  });
+
+  it("starts a pass with them on it, then adds the next person to the same pass", () => {
+    const state = run([
+      loaded,
+      ...person("a", "Priya", DOB.adult40),
+      ...person("c", "Aarav", DOB.child7),
+      choose("a", "g1"),
+      choose("c", "g2"),
+    ]);
+    expect(state.familyGroups).toEqual([
+      { id: "g1", productId: IDS.family, date: "2026-11-11", attendeeClientIds: ["a", "c"] },
+    ]);
+    expect(state.attendees.map((a) => a.entry.kind)).toEqual(["family_pass", "family_pass"]);
+    expect(state.notices).toEqual([]);
+  });
+
+  it("starts a second pass when the first has no room for their age band", () => {
+    const state = run([
+      loaded,
+      ...person("a", "Priya", DOB.adult40),
+      ...person("b", "Rohan", DOB.adult40),
+      ...person("d", "Dev", DOB.adult40),
+      choose("a", "g1"),
+      choose("b", "g2"),
+      choose("d", "g3", "2026-11-12"),
+    ]);
+    expect(state.familyGroups.map((g) => [g.id, g.attendeeClientIds])).toEqual([
+      ["g1", ["a", "b"]],
+      ["g3", ["d"]],
+    ]);
+  });
+});
+
+describe("furthest step", () => {
+  it("remembers the furthest step reached, so the stepper can go forward again", () => {
+    const state = run([
+      { type: "GO_TO_STEP", step: "review" },
+      { type: "GO_TO_STEP", step: "passes" },
+    ]);
+    expect(state.step).toBe("passes");
+    expect(state.furthestStep).toBe("review");
+  });
+});

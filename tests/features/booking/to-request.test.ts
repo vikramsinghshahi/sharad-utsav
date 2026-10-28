@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { bookingDraftSchema, createBookingRequestSchema } from "@/contracts/requests";
 import { fieldTargetFor } from "@/features/booking/state/field-targets";
-import { problemIssues } from "@/features/booking/state/step-checks";
+import { issuesUpTo, problemIssues } from "@/features/booking/state/step-checks";
+import { stockIssues } from "@/features/booking/state/stock-issues";
 import {
   extraAt,
   requestFingerprint,
@@ -171,5 +172,71 @@ describe("problemIssues", () => {
         message: "Aarav needs someone aged 18 or over with them on Tue 10 Nov, Fri 13 Nov.",
       },
     ]);
+  });
+});
+
+describe("stock conflicts and step blocking", () => {
+  const garba = {
+    id: IDS.garba,
+    code: "GARBA",
+    displayName: "Garba Workshop",
+    category: "extra" as const,
+    priceCents: 2000,
+    pricing: "per_unit" as const,
+    rule: {
+      type: "extra" as const,
+      scope: "per_attendee_per_session" as const,
+      availableDates: ["2026-11-11", "2026-11-13"],
+      requiresEntryOnDay: true,
+      minAgeBand: "child" as const,
+    },
+    remaining: 0,
+    soldOut: true,
+  };
+  const withGarba = run(
+    [{ type: "TOGGLE_EXTRA_DAY", productId: IDS.garba, clientId: "a", date: "2026-11-11" }],
+    family,
+  );
+  const soldOut = {
+    type: "/problems/sold-out",
+    title: "Not enough left",
+    status: 409,
+    code: "SOLD_OUT",
+    detail: "Sorry, this has sold out.",
+    details: [{ path: [], code: "SOLD_OUT", message: "Sorry, this has sold out." }],
+  };
+
+  it("names what sold out, points at its step and field, and offers a one-click fix", () => {
+    const [issue, ...rest] = problemIssues(withGarba, soldOut, { products: [garba] });
+    expect(rest).toEqual([]);
+    expect(issue).toMatchObject({
+      step: "extras",
+      fieldId: `extra-${IDS.garba}-a`,
+      message: "The Garba Workshop is now full — 0 places left.",
+      fix: { label: "Remove Garba Workshop for Priya Sharma" },
+    });
+    // The fix is ordinary reducer actions, and applying it removes the extra.
+    const fixed = run(issue?.fix?.actions ?? [], withGarba);
+    expect(fixed.attendeeExtras.some((e) => e.productId === IDS.garba)).toBe(false);
+  });
+
+  it("the same helper serves a create conflict (stockIssues)", () => {
+    expect(stockIssues(withGarba, { products: [garba] }, "x")[0]?.step).toBe("extras");
+    // Nothing short any more (e.g. stock came back): fall back to the server's words.
+    expect(stockIssues(family, { products: [garba] }, "Sorry, this has sold out.")).toEqual([
+      {
+        step: "review",
+        fieldId: "step-heading",
+        message: "Sorry, this has sold out.",
+        persistent: true,
+      },
+    ]);
+  });
+
+  it("a later step's problem never blocks Next on an earlier step", () => {
+    const issues = problemIssues(withGarba, soldOut, { products: [garba] });
+    expect(issuesUpTo(issues, "passes")).toEqual([]);
+    expect(issuesUpTo(issues, "extras")).toHaveLength(1);
+    expect(issuesUpTo(issues, "review")).toHaveLength(1);
   });
 });

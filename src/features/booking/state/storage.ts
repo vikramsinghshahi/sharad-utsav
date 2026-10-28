@@ -19,6 +19,7 @@ const entrySchema = z.discriminatedUnion("kind", [
 
 const persistedSchema = z.object({
   step: z.enum(STEPS),
+  furthestStep: z.enum(STEPS).catch("who"),
   attendees: z
     .array(
       z.object({
@@ -93,6 +94,7 @@ export function clearDraft(slug: string): void {
 export function toPersisted(state: PersistedState): PersistedState {
   const {
     step,
+    furthestStep,
     attendees,
     familyGroups,
     attendeeExtras,
@@ -105,6 +107,7 @@ export function toPersisted(state: PersistedState): PersistedState {
   } = state;
   return {
     step,
+    furthestStep,
     attendees,
     familyGroups,
     attendeeExtras,

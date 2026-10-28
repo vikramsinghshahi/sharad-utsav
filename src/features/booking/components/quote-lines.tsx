@@ -17,12 +17,12 @@ interface Props {
   quote: QuoteResponse;
   catalog: CatalogResponse;
   state: Pick<BookingState, "attendees" | "familyGroups">;
-  compact?: boolean; // the side summary: no per-line discount notes
 }
 
 // The server's quote, grouped person → their lines, then family passes, then group extras.
 // Nothing here adds anything up: every number is a field of the quote.
-export function QuoteLines({ quote, catalog, state, compact = false }: Props) {
+// Discounts are shown once, in the totals: each line already shows its amount after discount.
+export function QuoteLines({ quote, catalog, state }: Props) {
   const groups = groupLines(quote, state);
   const nameOf = (line: Line) => productById(catalog, line.productId)?.displayName ?? "Item";
 
@@ -48,11 +48,6 @@ export function QuoteLines({ quote, catalog, state, compact = false }: Props) {
                   </span>
                   <Money cents={line.lineTotalCents} className="shrink-0 text-white" />
                 </div>
-                {!compact && line.discountCents > 0 && (
-                  <p className="text-success-text">
-                    Includes <Money cents={line.discountCents} /> off
-                  </p>
-                )}
               </li>
             ))}
           </ul>

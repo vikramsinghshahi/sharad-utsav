@@ -5,6 +5,9 @@ import { useEffect, useRef } from "react";
 export interface SummaryItem {
   fieldId: string;
   message: string;
+  // An optional one-click fix shown next to the message.
+  fixLabel?: string;
+  onFix?: () => void;
 }
 
 // Shown at the top of a step after "Next" finds problems. Each link moves focus to its field.
@@ -44,7 +47,10 @@ export function ErrorSummary({ items, onSelect }: Props) {
       </h3>
       <ul className="mt-2 space-y-1.5 text-sm">
         {items.map((item, index) => (
-          <li key={`${item.fieldId}-${index}`}>
+          <li
+            key={`${item.fieldId}-${index}`}
+            className="flex flex-wrap items-center gap-x-3 gap-y-1"
+          >
             <a
               href={`#${item.fieldId}`}
               onClick={(event) => {
@@ -55,6 +61,15 @@ export function ErrorSummary({ items, onSelect }: Props) {
             >
               {item.message}
             </a>
+            {item.fixLabel && item.onFix && (
+              <button
+                type="button"
+                onClick={item.onFix}
+                className="min-h-11 rounded-lg border border-line-strong px-3 py-1.5 font-medium text-white hover:border-bright-gold hover:text-bright-gold"
+              >
+                {item.fixLabel}
+              </button>
+            )}
           </li>
         ))}
       </ul>

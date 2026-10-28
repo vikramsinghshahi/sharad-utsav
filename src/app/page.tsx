@@ -2,6 +2,13 @@ import Link from "next/link";
 import { DiyaIcon } from "@/features/booking/components/diya-icon";
 
 const BOOKING_PATH = "/events/sharad-utsav-2026/book";
+const FESTIVAL_DAYS = [
+  ["Tue", "10"],
+  ["Wed", "11"],
+  ["Thu", "12"],
+  ["Fri", "13"],
+  ["Sat", "14"],
+] as const;
 
 export default function Home() {
   return (
@@ -21,6 +28,21 @@ export default function Home() {
         Five evenings of garba, dandiya and devotion, Tuesday 10 to Saturday 14 November. Book for
         the whole family in a few minutes — grandparents and little ones included.
       </p>
+
+      <ol aria-label="Festival evenings" className="mt-8 grid max-w-md grid-cols-5 gap-2">
+        {FESTIVAL_DAYS.map(([weekday, day]) => (
+          <li
+            key={day}
+            className="flex flex-col items-center rounded-xl border border-bright-gold/50 py-2 leading-tight"
+          >
+            <span className="text-xs text-white/80">{weekday}</span>
+            <span className="font-serif text-2xl font-semibold text-bright-gold lining-nums">
+              {day}
+            </span>
+            <span className="text-xs text-white/80">Nov</span>
+          </li>
+        ))}
+      </ol>
 
       <div className="mt-8 flex flex-wrap items-center gap-4">
         <Link

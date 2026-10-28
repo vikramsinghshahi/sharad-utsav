@@ -7,7 +7,9 @@ import type { IsoDate } from "@/domain/calendar";
 import { formatDay } from "../format";
 import { fieldIds, fieldTargetFor, STEP_HEADING_ID } from "./field-targets";
 import { ageInfo, dobProblem, findBookerAttendee } from "./selectors";
-import { STEPS, type BookingState, type Step } from "./types";
+import { stockIssues } from "./stock-issues";
+import { STEPS, type Action, type BookingState, type Step } from "./types";
+import type { CatalogProduct } from "./selectors";
 
 // Instant checks before "Next", so people hear about a problem on the screen
 // where they can fix it. The server re-checks everything; these only guide.
@@ -16,13 +18,19 @@ export interface StepIssue {
   step: Step;
   fieldId: string;
   message: string;
+  // The person it is about, so a card added after "Next" isn't flagged before it's filled in.
+  clientId?: string;
+  // News from the server (e.g. something sold out): shown without waiting for "Next".
+  persistent?: boolean;
+  // A one-click way to resolve it, made of ordinary reducer actions.
+  fix?: { label: string; actions: Action[] };
 }
 
 const personLabel = (state: BookingState, index: number) => {
   const attendee = state.attendees[index];
   return attendee && attendee.firstName.trim() !== ""
     ? attendee.firstName.trim()
-    : `person ${index + 1}`;
+    : `Person ${index + 1}`;
 };
 
 function whoIssues(state: BookingState, today: IsoDate): StepIssue[] {
@@ -38,7 +46,8 @@ function whoIssues(state: BookingState, today: IsoDate): StepIssue[] {
       issues.push({
         step: "who",
         fieldId: fieldIds.attendeeField(a.clientId, "firstName"),
-        message: `Please enter a first name for person ${index + 1}.`,
+        message: `Please enter a first name for Person ${index + 1}.`,
+        clientId: a.clientId,
       });
     }
     if (a.lastName.trim() === "") {
@@ -46,14 +55,16 @@ function whoIssues(state: BookingState, today: IsoDate): StepIssue[] {
         step: "who",
         fieldId: fieldIds.attendeeField(a.clientId, "lastName"),
         message: `Please enter a last name for ${who}.`,
+        clientId: a.clientId,
       });
     }
-    const dob = dobProblem(a.dateOfBirth, today);
+    const dob = dobProblem(a.dateOfBirth, today, who);
     if (dob) {
       issues.push({
         step: "who",
         fieldId: fieldIds.attendeeField(a.clientId, "dateOfBirth"),
-        message: `${who}: ${dob}`,
+        message: dob,
+        clientId: a.clientId,
       });
     }
     return issues;
@@ -151,8 +162,19 @@ export function localIssues(state: BookingState, step: Step, today: IsoDate): St
   return checks.filter(([s]) => STEPS.indexOf(s) <= upTo).flatMap(([, check]) => check());
 }
 
-// A problem+json body's details, placed on the fields they refer to.
-export function problemIssues(state: BookingState, problem: ProblemDetails): StepIssue[] {
+// A problem+json body's details, placed on the fields they refer to. Stock conflicts
+// carry no path, so they are worked out from the catalog (see stock-issues.ts).
+export function problemIssues(
+  state: BookingState,
+  problem: ProblemDetails,
+  catalog?: { products: CatalogProduct[] },
+): StepIssue[] {
+  if (problem.code === "SOLD_OUT" || problem.code === "INSUFFICIENT_STOCK") {
+    const fallback = problem.detail ?? "Something in this booking has sold out.";
+    return catalog
+      ? stockIssues(state, catalog, fallback)
+      : [{ step: "review", fieldId: STEP_HEADING_ID, message: fallback, persistent: true }];
+  }
   const details = problem.details ?? [];
   if (details.length === 0) {
     return [{ step: "review", fieldId: STEP_HEADING_ID, message: problem.detail ?? problem.title }];
@@ -164,6 +186,9 @@ export function problemIssues(state: BookingState, problem: ProblemDetails): Ste
   }));
 }
 
+// What stops "Next" on `step`: only problems on this step or an earlier one. A problem
+// on a later step never blocks the way to it, so nobody can be trapped (e.g. an extra
+// that sold out can always be reached and removed).
 export function issuesUpTo(issues: readonly StepIssue[], step: Step): StepIssue[] {
   const upTo = STEPS.indexOf(step);
   return issues.filter((i) => STEPS.indexOf(i.step) <= upTo);

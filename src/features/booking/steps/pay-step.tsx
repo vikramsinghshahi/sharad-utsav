@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { Callout } from "../components/callout";
 import { errorIdFor, FieldError } from "../components/field-error";
 import { HoldCountdown } from "../components/hold-countdown";
@@ -29,6 +32,14 @@ export function PayStep(props: Props) {
   const { state, dispatch, today, errorsFor, onPay, onHoldExpired, onAddBookerAsAttendee } = props;
   const { booker, hold, error, inFlight } = state;
   const match = findBookerAttendee(state);
+  const feedback = useRef<HTMLDivElement>(null);
+  const failed =
+    error?.kind === "declined" || (error?.kind === "network" && error.during === "pay");
+
+  // After a failed payment, take focus to the message (not lost on <body>).
+  useEffect(() => {
+    if (failed) feedback.current?.focus();
+  }, [failed, error]);
 
   if (hold) {
     const changed = hold.reviewedTotalCents !== null && hold.reviewedTotalCents !== hold.totalCents;
@@ -56,7 +67,12 @@ export function PayStep(props: Props) {
             <Money cents={hold.totalCents} />
           </p>
 
-          <div aria-live="polite" className="mt-4 space-y-2 empty:hidden">
+          <div
+            ref={feedback}
+            tabIndex={-1}
+            aria-live="polite"
+            className="mt-4 space-y-2 rounded-xl empty:hidden"
+          >
             {error?.kind === "declined" && (
               <Callout tone="error" role="alert">
                 The payment didn&apos;t go through. Your places are still held — you can try again.
@@ -127,13 +143,24 @@ export function PayStep(props: Props) {
       {error?.kind === "stock" && (
         <Callout tone="error" role="alert">
           <p>{error.message}</p>
-          <button
-            type="button"
-            className={`${secondaryButton} mt-2`}
-            onClick={() => dispatch({ type: "GO_TO_STEP", step: error.step })}
-          >
-            Go to {STEP_TITLES[error.step]}
-          </button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {error.fix && (
+              <button
+                type="button"
+                className={secondaryButton}
+                onClick={() => error.fix?.actions.forEach((a) => dispatch(a))}
+              >
+                {error.fix.label}
+              </button>
+            )}
+            <button
+              type="button"
+              className={secondaryButton}
+              onClick={() => dispatch({ type: "GO_TO_STEP", step: error.step })}
+            >
+              Go to {STEP_TITLES[error.step]}
+            </button>
+          </div>
         </Callout>
       )}
       {error?.kind === "problem" && (error.details ?? []).length === 0 && (

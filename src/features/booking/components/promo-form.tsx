@@ -88,13 +88,13 @@ export function PromoForm({ applied, outcome, checking, dispatch }: Props) {
         {checking && applied !== "" && <p className="text-sm text-white/75">Checking code…</p>}
         {message && (
           <Callout tone={message.tone}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className={message.tone === "success" ? "text-success-text" : ""}>
+            <div className="flex items-center justify-between gap-3">
+              <span className={`flex-1 ${message.tone === "success" ? "text-success-text" : ""}`}>
                 {message.text}
               </span>
               <button
                 type="button"
-                className={quietButton}
+                className={`${quietButton} -my-2 -mr-2 shrink-0 whitespace-nowrap`}
                 onClick={() => {
                   setText("");
                   dispatch({ type: "SET_PROMO", code: "" });

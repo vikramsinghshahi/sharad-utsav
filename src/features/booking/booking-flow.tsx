@@ -15,7 +15,6 @@ import { OfflineBanner } from "./components/offline-banner";
 import { Skeleton } from "./components/skeleton";
 import { Stepper } from "./components/stepper";
 import { StickySummary, type PrimaryAction } from "./components/sticky-summary";
-import { formatMoney } from "./format";
 import { STEP_HEADING_ID } from "./state/field-targets";
 import { bookingReducer, initialBookingState } from "./state/reducer";
 import { festivalInfo } from "./state/selectors";
@@ -68,7 +67,11 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
   const router = useRouter();
   const [state, dispatch] = useReducer(bookingReducer, undefined, initialBookingState);
   // Which step's problems are on show (set when "Next" finds some). UI-only.
-  const [errorsShownFor, setErrorsShownFor] = useState<Step | null>(null);
+  // Plus who was in the group at that moment: a card added afterwards stays calm until
+  // its own "Next".
+  const [shown, setShown] = useState<{ step: Step; clientIds: string[] } | null>(null);
+  const setErrorsShownFor = (step: Step | null) =>
+    setShown(step === null ? null : { step, clientIds: state.attendees.map((a) => a.clientId) });
   const online = useOnlineStatus();
   const today = todayIn(catalog.event.timezone, new Date());
 
@@ -129,9 +132,24 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
             details: state.error.details,
           })
         : [];
-    const fromQuote = quote.status === "invalid" ? problemIssues(state, quote.problem) : [];
+    const fromQuote =
+      quote.status === "invalid" ? problemIssues(state, quote.problem, catalog) : [];
     return [...fromCreate, ...fromQuote];
-  }, [state, quote]);
+  }, [state, quote, catalog]);
+
+  // A quote that hit a stock conflict means our catalog is out of date: refresh it once
+  // per conflicting draft, so the message can name what ran out.
+  const stockConflictKey =
+    quote.status === "invalid" &&
+    (quote.problem.code === "SOLD_OUT" || quote.problem.code === "INSUFFICIENT_STOCK")
+      ? quote.key
+      : null;
+  const reloadedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (stockConflictKey === null || reloadedFor.current === stockConflictKey) return;
+    reloadedFor.current = stockConflictKey;
+    reloadCatalog();
+  }, [stockConflictKey, reloadCatalog]);
 
   // The friendlier local message wins when both sides flag the same field.
   const blockingIssues = (step: Step) => {
@@ -141,12 +159,23 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
     return dedupe([...local, ...server]);
   };
 
-  const visibleIssues: StepIssue[] =
-    errorsShownFor === state.step
-      ? blockingIssues(state.step)
+  // Server news (something sold out) shows on its own step and after, without a "Next".
+  const persistent = issuesUpTo(
+    serverIssues.filter((i) => i.persistent),
+    state.step,
+  );
+  const visibleIssues: StepIssue[] = dedupe(
+    shown?.step === state.step
+      ? [
+          ...persistent,
+          ...blockingIssues(state.step).filter(
+            (i) => i.clientId === undefined || shown.clientIds.includes(i.clientId),
+          ),
+        ]
       : state.step === "review" || (state.step === "pay" && state.error?.kind === "problem")
         ? issuesUpTo(serverIssues, state.step)
-        : [];
+        : persistent,
+  );
 
   const errorsFor = (fieldId: string) =>
     visibleIssues.filter((i) => i.fieldId === fieldId).map((i) => i.message);
@@ -195,7 +224,7 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
     if (following) goTo(following);
   };
 
-  const action = primaryAction(state, quote, next, checkout.pay);
+  const action = primaryAction(state, quote, next);
 
   const stepProps: StepProps = { state, dispatch, catalog, quote, today, errorsFor };
   const stepIndex = STEPS.indexOf(state.step);
@@ -223,7 +252,7 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
           </div>
         </header>
 
-        <Stepper current={state.step} onGo={goTo} />
+        <Stepper current={state.step} furthest={state.furthestStep} onGo={goTo} />
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,720px)_minmax(300px,1fr)] lg:items-start">
           <main className="min-w-0 space-y-5">
@@ -245,7 +274,16 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
             ) : (
               <>
                 <ErrorSummary
-                  items={visibleIssues.map((i) => ({ fieldId: i.fieldId, message: i.message }))}
+                  items={visibleIssues.map((i) => ({
+                    fieldId: i.fieldId,
+                    message: i.message,
+                    ...(i.fix
+                      ? {
+                          fixLabel: i.fix.label,
+                          onFix: () => i.fix?.actions.forEach((a) => dispatch(a)),
+                        }
+                      : {}),
+                  }))}
                   onSelect={goToIssue}
                 />
                 <NoticeList
@@ -306,19 +344,12 @@ function primaryAction(
   state: BookingState,
   quote: QuoteState,
   next: () => void,
-  pay: (outcome: "succeed" | "decline") => Promise<void>,
 ): PrimaryAction | null {
   const following = STEPS[STEPS.indexOf(state.step) + 1];
   const checking = quote.status === "loading" && state.step !== "who";
   if (state.step === "pay") {
-    if (state.hold) {
-      const total = state.hold.totalCents;
-      return {
-        label: state.inFlight === "pay" ? "Paying…" : `Pay ${formatMoney(total)}`,
-        onClick: () => void pay("succeed"),
-        busy: state.inFlight === "pay",
-      };
-    }
+    // The payment panel holds the Pay and decline buttons; a second Pay here would only confuse.
+    if (state.hold) return null;
     return {
       label: state.inFlight === "create" ? "Holding your places…" : "Continue to payment",
       onClick: next,

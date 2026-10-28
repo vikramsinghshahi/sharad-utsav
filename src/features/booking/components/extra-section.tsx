@@ -37,7 +37,7 @@ export function ExtraSection({ product, state, dispatch, errorsFor }: Props) {
   const stock = product.soldOut
     ? "Sold out"
     : product.remaining <= LOW_STOCK
-      ? `${product.remaining} ${product.remaining === 1 ? "place" : "places"} left`
+      ? `${product.remaining} ${product.remaining === 1 ? "place" : "places"} left${chosen > 0 ? ` · you've picked ${chosen}` : ""}`
       : null;
 
   return (
@@ -100,7 +100,8 @@ export function ExtraSection({ product, state, dispatch, errorsFor }: Props) {
                 invalid={errors.length > 0}
                 describedBy={errors.length > 0 ? errorIdFor(fieldId) : undefined}
                 options={days.map((date) => {
-                  const full = product.soldOut || left <= 0;
+                  // A day they've already picked is theirs: never call it "Full".
+                  const full = !selected.includes(date) && (product.soldOut || left <= 0);
                   return { date, disabled: full, note: full ? "Full" : undefined };
                 })}
                 onToggle={(date) =>

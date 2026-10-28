@@ -57,7 +57,9 @@ export function productById(catalog: CatalogResponse, id: string) {
 export function festivalInfo(catalog: CatalogResponse): FestivalInfo {
   const passBands: FestivalInfo["passBands"] = {};
   const extraMinBands: FestivalInfo["extraMinBands"] = {};
+  const familyCovers: FestivalInfo["familyCovers"] = {};
   for (const product of catalog.products) {
+    if (isPass(product) && product.rule.covers) familyCovers[product.id] = product.rule.covers;
     if (isPass(product) && product.rule.eligibleAgeBand) {
       passBands[product.id] = product.rule.eligibleAgeBand;
     }
@@ -66,7 +68,7 @@ export function festivalInfo(catalog: CatalogResponse): FestivalInfo {
     }
   }
   const days = catalog.days.map((d) => d.date);
-  return { firstDay: days[0] ?? "", days, passBands, extraMinBands };
+  return { firstDay: days[0] ?? "", days, passBands, extraMinBands, familyCovers };
 }
 
 // ---------- ages ----------
@@ -86,14 +88,16 @@ export function ageInfo(dateOfBirth: string, firstDay: string): AgeInfo | null {
 }
 
 // Inline DOB check for the form, using the same domain rules the server uses (A6).
-export function dobProblem(dateOfBirth: string, today: IsoDate): string | null {
-  if (dateOfBirth.trim() === "") return "Please enter a date of birth.";
+// `who` names the person in the message ("Person 2", "Aarav"); omit it for "you".
+export function dobProblem(dateOfBirth: string, today: IsoDate, who?: string): string | null {
+  const forWho = who ? ` for ${who}` : "";
+  if (dateOfBirth.trim() === "") return `Please enter a date of birth${forWho}.`;
   const result = parseDateOfBirth(dateOfBirth, today);
   if (result.ok) return null;
   const reason = result.issues[0]?.params?.reason;
-  if (reason === "future") return "That date of birth is in the future.";
-  if (reason === "implausible") return "Please check the year of birth.";
-  return "Please enter a real date of birth.";
+  if (reason === "future") return `${who ? `${who}'s` : "That"} date of birth is in the future.`;
+  if (reason === "implausible") return `Please check the year of birth${forWho}.`;
+  return `Please enter a real date of birth${forWho}.`;
 }
 
 const BAND_RANK: Record<AgeBand, number> = { infant: 0, child: 1, adult: 2 };
@@ -151,7 +155,7 @@ export function attendanceDates(
 }
 
 export function attendeeName(attendee: Pick<AttendeeDraft, "firstName" | "lastName">): string {
-  const name = `${attendee.firstName} ${attendee.lastName}`.trim();
+  const name = `${attendee.firstName.trim()} ${attendee.lastName.trim()}`.trim();
   return name === "" ? "This person" : name;
 }
 
@@ -195,11 +199,11 @@ function unique(values: readonly string[]): string[] {
 }
 
 // After a 409 stock conflict: which chosen products the fresh catalog can no longer
-// cover. Only used to say which item ran out and where to change it.
+// cover, and how many units the draft asks for. Only used to say what ran out.
 export function shortProducts(
   state: Pick<BookingState, "attendees" | "familyGroups" | "attendeeExtras" | "bookingExtras">,
-  catalog: CatalogResponse,
-): CatalogProduct[] {
+  catalog: Pick<CatalogResponse, "products">,
+): { product: CatalogProduct; wanted: number }[] {
   const units = new Map<string, number>();
   const add = (id: string, n: number) => units.set(id, (units.get(id) ?? 0) + n);
   for (const a of state.attendees) {
@@ -209,8 +213,26 @@ export function shortProducts(
   for (const g of state.familyGroups) add(g.productId, 1);
   for (const e of state.attendeeExtras) add(e.productId, e.dates.length);
   for (const e of state.bookingExtras) add(e.productId, e.quantity);
-  return catalog.products.filter((p) => {
-    const wanted = units.get(p.id) ?? 0;
-    return wanted > 0 && (p.soldOut || p.remaining < wanted);
+  return catalog.products.flatMap((product) => {
+    const wanted = units.get(product.id) ?? 0;
+    return wanted > 0 && (product.soldOut || product.remaining < wanted)
+      ? [{ product, wanted }]
+      : [];
   });
+}
+
+// Whether `clientId` (of `band`) fits in `group` without breaking its composition (D3).
+export function familyGroupHasRoom(
+  state: Pick<BookingState, "attendees">,
+  group: FamilyGroupDraft,
+  band: TicketBand,
+  festival: FestivalInfo,
+): boolean {
+  const covers = festival.familyCovers[group.productId];
+  if (!covers) return false;
+  const taken = group.attendeeClientIds.filter((id) => {
+    const member = state.attendees.find((a) => a.clientId === id);
+    return member && ageInfo(member.dateOfBirth, festival.firstDay)?.band === band;
+  }).length;
+  return taken < (band === "adult" ? covers.adult : covers.child);
 }

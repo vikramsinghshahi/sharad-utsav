@@ -3,7 +3,7 @@
 import { useRef, type Dispatch } from "react";
 import type { ProblemDetails } from "@/contracts/responses";
 import { reusableCreateKey, reusablePayKey } from "../state/reducer";
-import { productById, shortProducts } from "../state/selectors";
+import { stockIssues } from "../state/stock-issues";
 import { requestFingerprint, toCreateBookingRequest } from "../state/to-request";
 import type { Action, BookingState, FlowError, PayAttempt } from "../state/types";
 import { createBooking, fetchBooking, fetchCatalog, payBooking } from "./client";
@@ -91,16 +91,15 @@ export function useCheckout({
   // The 409 names no product, so compare the draft with fresh stock to say which one ran out.
   async function stockError(problem: ProblemDetails): Promise<FlowError> {
     const fresh = await fetchCatalog(slug);
-    const short = fresh.ok ? shortProducts(state, fresh.data) : [];
-    const first = short[0];
-    if (!first || !fresh.ok) {
-      return { kind: "stock", message: problem.detail ?? "Something sold out.", step: "passes" };
-    }
-    const product = productById(fresh.data, first.id) ?? first;
-    const message = product.soldOut
-      ? `Sorry — ${product.displayName} has just sold out. Please change your selection.`
-      : `Sorry — only ${product.remaining} ${product.displayName} left. Please reduce your selection.`;
-    return { kind: "stock", message, step: product.category === "entry" ? "passes" : "extras" };
+    const fallback = problem.detail ?? "Something in this booking has sold out.";
+    const issue = fresh.ok ? stockIssues(state, fresh.data, fallback)[0] : undefined;
+    if (!issue) return { kind: "stock", message: fallback, step: "review" };
+    return {
+      kind: "stock",
+      message: issue.message,
+      step: issue.step,
+      ...(issue.fix ? { fix: issue.fix } : {}),
+    };
   }
 
   async function pay(outcome: PayAttempt["outcome"]) {

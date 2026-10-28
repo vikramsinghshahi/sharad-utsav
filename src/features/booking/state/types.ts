@@ -50,10 +50,14 @@ export interface FestivalInfo {
   passBands: Record<string, "adult" | "child">;
   // Per-person extras by id → the youngest band allowed (e.g. Garba: child, D14).
   extraMinBands: Record<string, AgeBand>;
+  // Family passes by id → how many adults and children one pass covers (D3).
+  familyCovers: Record<string, { adult: number; child: number }>;
 }
 
 export interface Notice {
   id: string;
+  // The person it is about: it is withdrawn as soon as that person's details change again.
+  clientId?: string;
   tone: "info" | "warning";
   text: string;
 }
@@ -84,12 +88,14 @@ export type FlowError =
   | { kind: "network"; during: "create" | "pay" }
   | { kind: "declined" }
   | { kind: "released" }
-  | { kind: "stock"; message: string; step: Step }
+  | { kind: "stock"; message: string; step: Step; fix?: { label: string; actions: Action[] } }
   | { kind: "problem"; title: string; detail: string | null; details: ProblemDetails["details"] };
 
 export interface BookingState {
   hydrated: boolean;
   step: Step;
+  // The furthest step reached: the stepper lets people jump back and forth up to here.
+  furthestStep: Step;
   festival: FestivalInfo | null;
   attendees: AttendeeDraft[];
   familyGroups: FamilyGroupDraft[];
@@ -110,6 +116,7 @@ export interface BookingState {
 export type PersistedState = Pick<
   BookingState,
   | "step"
+  | "furthestStep"
   | "attendees"
   | "familyGroups"
   | "attendeeExtras"
@@ -130,6 +137,12 @@ export type Action =
   | { type: "SET_NAME"; clientId: string; field: "firstName" | "lastName"; value: string }
   | { type: "SET_DOB"; clientId: string; dateOfBirth: string }
   | { type: "SET_ENTRY"; clientId: string; entry: EntryDraft }
+  // Family pass chosen on a person's card: join a pass with room, or start one (D3, D20).
+  | {
+      type: "CHOOSE_FAMILY_PASS";
+      clientId: string;
+      newGroup: { id: string; productId: string; date: string };
+    }
   | { type: "TOGGLE_DAY"; clientId: string; date: string }
   | { type: "ADD_FAMILY_GROUP"; id: string; productId: string; date: string }
   | { type: "REMOVE_FAMILY_GROUP"; id: string }

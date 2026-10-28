@@ -68,7 +68,7 @@ export function StickySummary({
       <div className="no-print fixed inset-x-0 bottom-0 z-20 border-t border-line bg-primary-dark/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm lg:hidden">
         <div className="mx-auto flex max-w-xl items-center gap-4">
           <div className="min-w-24" aria-busy={updating || undefined}>
-            <p className="text-xs text-white/75">Total</p>
+            <p className="text-sm text-white/75">Total</p>
             {shown ? (
               <p
                 className={`font-serif text-2xl leading-tight font-semibold text-bright-gold transition-opacity ${updating ? "opacity-60" : ""}`}
@@ -120,7 +120,7 @@ export function StickySummary({
           )}
           {shown && !totalsOnly && (
             <div className={`transition-opacity ${updating ? "opacity-60" : ""}`}>
-              <QuoteLines quote={shown} catalog={catalog} state={state} compact />
+              <QuoteLines quote={shown} catalog={catalog} state={state} />
             </div>
           )}
         </div>

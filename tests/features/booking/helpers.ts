@@ -17,6 +17,7 @@ export const FESTIVAL: FestivalInfo = {
   days: ["2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14"],
   passBands: { [IDS.dayAdult]: "adult", [IDS.dayChild]: "child", [IDS.allDaysChild]: "child" },
   extraMinBands: { [IDS.garba]: "child" },
+  familyCovers: { [IDS.family]: { adult: 2, child: 2 } },
 };
 
 export const DOB = { adult40: "1986-05-01", child7: "2019-03-15", toddler2: "2024-01-20" };

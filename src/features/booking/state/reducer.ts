@@ -1,6 +1,14 @@
 import { MAX_ATTENDEES } from "@/domain/booking";
 import { formatDay, formatDays } from "../format";
-import { ageInfo, attendanceDates, bandAllows, firstNameOf, type AgeInfo } from "./selectors";
+import {
+  ageInfo,
+  attendanceDates,
+  bandAllows,
+  familyGroupHasRoom,
+  firstNameOf,
+  type AgeInfo,
+} from "./selectors";
+import { STEPS } from "./types";
 import type {
   Action,
   AttendeeDraft,
@@ -26,6 +34,7 @@ export function initialBookingState(): BookingState {
   return {
     hydrated: false,
     step: "who",
+    furthestStep: "who",
     festival: null,
     attendees: [],
     familyGroups: [],
@@ -63,7 +72,7 @@ const DRAFT_ACTIONS = new Set<Action["type"]>([
 ]);
 
 export function bookingReducer(state: BookingState, action: Action): BookingState {
-  const next = reduce(state, action);
+  const next = reduce(withdrawNoticesAbout(state, subjectOf(action)), action);
   if (next === state) return next;
   if (DRAFT_ACTIONS.has(action.type)) return invalidateCheckout(next);
   if (action.type === "SET_BOOKER") return { ...next, createAttempt: null };
@@ -78,10 +87,21 @@ function reduce(state: BookingState, action: Action): BookingState {
         : { ...state, hydrated: true };
 
     case "CATALOG_LOADED":
+      // A reload with the same days and rules changes nothing.
+      if (sameFestival(state.festival, action.festival)) return state;
       return pruneExtras({ ...state, festival: action.festival });
 
     case "GO_TO_STEP":
-      return { ...state, step: action.step, error: null };
+      if (state.step === action.step && state.error === null) return state;
+      return {
+        ...state,
+        step: action.step,
+        furthestStep:
+          STEPS.indexOf(action.step) > STEPS.indexOf(state.furthestStep)
+            ? action.step
+            : state.furthestStep,
+        error: null,
+      };
 
     case "ADD_ATTENDEE": {
       if (state.attendees.length >= MAX_ATTENDEES) return state;
@@ -98,6 +118,7 @@ function reduce(state: BookingState, action: Action): BookingState {
             added,
             "info",
             `Added ${firstNameOf(attendee)} to the group. Please choose a ticket for them.`,
+            attendee.clientId,
           )
         : added;
     }
@@ -134,6 +155,9 @@ function reduce(state: BookingState, action: Action): BookingState {
         updateAttendee(base, action.clientId, (a) => ({ ...a, entry: action.entry })),
       );
     }
+
+    case "CHOOSE_FAMILY_PASS":
+      return chooseFamilyPass(state, action.clientId, action.newGroup);
 
     case "TOGGLE_DAY": {
       const attendee = findAttendee(state, action.clientId);
@@ -294,10 +318,40 @@ export function reusablePayKey(attempt: PayAttempt | null, outcome: PayAttempt["
   return attempt?.awaitingRetry && attempt.outcome === outcome ? attempt.key : null;
 }
 
+// ---------- notices ----------
+
+// The person an action is about. Their earlier notices are withdrawn first, so a
+// note like "…so the adult day pass was removed" never outlives what it describes.
+function subjectOf(action: Action): string | null {
+  switch (action.type) {
+    case "REMOVE_ATTENDEE":
+    case "SET_DOB":
+    case "SET_ENTRY":
+    case "CHOOSE_FAMILY_PASS":
+    case "TOGGLE_DAY":
+    case "SET_FAMILY_GROUP":
+    case "TOGGLE_EXTRA_DAY":
+      return action.clientId;
+    default:
+      return null;
+  }
+}
+
+function withdrawNoticesAbout(state: BookingState, clientId: string | null): BookingState {
+  if (clientId === null || !state.notices.some((n) => n.clientId === clientId)) return state;
+  return { ...state, notices: state.notices.filter((n) => n.clientId !== clientId) };
+}
+
+function sameFestival(a: FestivalInfo | null, b: FestivalInfo): boolean {
+  return a !== null && JSON.stringify(a) === JSON.stringify(b);
+}
+
 // ---------- cascades ----------
 
 function invalidateCheckout(state: BookingState): BookingState {
-  const base = { ...state, createAttempt: null };
+  // A sold-out or rule error from "Continue to payment" was about the old draft.
+  const stale = state.error?.kind === "stock" || state.error?.kind === "problem";
+  const base = { ...state, createAttempt: null, ...(stale ? { error: null } : {}) };
   if (!state.hold) return base;
   return withNotice(
     { ...base, hold: null, payAttempt: null, error: null },
@@ -365,10 +419,41 @@ function setFamilyMember(
         next,
         "info",
         `${firstNameOf(attendee)}'s ${entryLabel(attendee.entry, state.festival)} was replaced by the family pass.`,
+        clientId,
       );
     }
   }
   return pruneExtras(next);
+}
+
+function chooseFamilyPass(
+  state: BookingState,
+  clientId: string,
+  newGroup: { id: string; productId: string; date: string },
+): BookingState {
+  const attendee = findAttendee(state, clientId);
+  const festival = state.festival;
+  const band = attendee && festival ? ageInfo(attendee.dateOfBirth, festival.firstDay)?.band : null;
+  if (!attendee || !festival || !band || band === "infant") return state;
+  if (state.familyGroups.some((g) => g.attendeeClientIds.includes(clientId))) {
+    return updateAttendee(state, clientId, (a) => ({ ...a, entry: { kind: "family_pass" } }));
+  }
+
+  // Join the first pass with room for their age band; otherwise start a new one.
+  const index = state.familyGroups.findIndex((g) => familyGroupHasRoom(state, g, band, festival));
+  const groups =
+    index >= 0
+      ? state.familyGroups.map((g, i) =>
+          i === index ? { ...g, attendeeClientIds: [...g.attendeeClientIds, clientId] } : g,
+        )
+      : [...state.familyGroups, { ...newGroup, attendeeClientIds: [clientId] }];
+  // The card itself now says "On family pass N · day", so no separate note is needed.
+  return pruneExtras(
+    updateAttendee({ ...state, familyGroups: groups }, clientId, (a) => ({
+      ...a,
+      entry: { kind: "family_pass" },
+    })),
+  );
 }
 
 function setDateOfBirth(state: BookingState, clientId: string, dateOfBirth: string): BookingState {
@@ -393,7 +478,7 @@ function setDateOfBirth(state: BookingState, clientId: string, dateOfBirth: stri
     after.band === "infant"
       ? `${who} is ${after.age} on ${on}. Under-5s come free, so the ${ticket} was removed.`
       : `${who} is ${after.age} on ${on}, so the ${ticket} was removed. Please choose a ${after.band} ticket.`;
-  return pruneExtras(withNotice(cleared, "warning", text));
+  return pruneExtras(withNotice(cleared, "warning", text, clientId));
 }
 
 function entryFitsBand(entry: EntryDraft, info: AgeInfo, festival: FestivalInfo): boolean {
@@ -452,14 +537,21 @@ function pruneExtras(state: BookingState): BookingState {
       next,
       "info",
       `${firstNameOf(attendee)}'s extras on ${days} were removed, as they're no longer coming then.`,
+      clientId,
     );
   }
   return next;
 }
 
-function withNotice(state: BookingState, tone: Notice["tone"], text: string): BookingState {
+function withNotice(
+  state: BookingState,
+  tone: Notice["tone"],
+  text: string,
+  clientId?: string,
+): BookingState {
   const seq = state.noticeSeq + 1;
+  const notice: Notice = { id: `notice-${seq}`, tone, text, ...(clientId ? { clientId } : {}) };
   // Keep the list short: the newest few are what matter.
-  const notices = [...state.notices, { id: `notice-${seq}`, tone, text }].slice(-4);
+  const notices = [...state.notices, notice].slice(-4);
   return { ...state, notices, noticeSeq: seq };
 }

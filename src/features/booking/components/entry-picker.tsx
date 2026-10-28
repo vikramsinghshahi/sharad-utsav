@@ -8,7 +8,8 @@ import {
   firstNameOf,
   type TicketBand,
 } from "../state/selectors";
-import type { Action, AttendeeDraft } from "../state/types";
+import type { Action, AttendeeDraft, FamilyGroupDraft } from "../state/types";
+import { formatDay } from "../format";
 import { AgeBadge } from "./age-badge";
 import { Callout } from "./callout";
 import { DayPicker } from "./day-picker";
@@ -24,11 +25,21 @@ interface Props {
   dispatch: Dispatch<Action>;
   errors: readonly string[];
   warnings: QuoteResponse["warnings"];
+  familyGroups: readonly FamilyGroupDraft[];
 }
 
 // One person's ticket. Only products for their age band are offered (A3/A4),
 // so an adult ticket for a 7-year-old can't even be chosen.
-export function EntryPicker({ attendee, age, band, catalog, dispatch, errors, warnings }: Props) {
+export function EntryPicker({
+  attendee,
+  age,
+  band,
+  catalog,
+  dispatch,
+  errors,
+  warnings,
+  familyGroups,
+}: Props) {
   const { clientId, entry } = attendee;
   const dayPass = dayPassFor(catalog, band);
   const allDays = allDaysPassFor(catalog, band);
@@ -142,7 +153,18 @@ export function EntryPicker({ attendee, age, band, catalog, dispatch, errors, wa
             `${priceLabel(family)} / day`,
             "Shared with family members — set it up below",
             family.soldOut ? "Sold out" : null,
-            () => dispatch({ type: "SET_ENTRY", clientId, entry: { kind: "family_pass" } }),
+            () => {
+              // Default a new pass to the first on-sale day that has no pass yet.
+              const onSale = catalog.days.filter((d) => d.onSale).map((d) => d.date);
+              const used = new Set(familyGroups.map((g) => g.date));
+              const date = onSale.find((d) => !used.has(d)) ?? onSale[0];
+              if (!date) return;
+              dispatch({
+                type: "CHOOSE_FAMILY_PASS",
+                clientId,
+                newGroup: { id: crypto.randomUUID(), productId: family.id, date },
+              });
+            },
           )}
       </fieldset>
       <FieldError id={errorIdFor(fieldId)} messages={errors} />
@@ -162,6 +184,10 @@ export function EntryPicker({ attendee, age, band, catalog, dispatch, errors, wa
         </div>
       )}
 
+      {entry.kind === "family_pass" && (
+        <FamilyMembership clientId={clientId} name={name} familyGroups={familyGroups} />
+      )}
+
       {soldOutWarning && allDays && (
         <div className="mt-3">
           <Callout tone="warning">
@@ -172,5 +198,46 @@ export function EntryPicker({ attendee, age, band, catalog, dispatch, errors, wa
         </div>
       )}
     </li>
+  );
+}
+
+// Which family pass(es) this person is on, with a jump to edit them.
+function FamilyMembership({
+  clientId,
+  name,
+  familyGroups,
+}: {
+  clientId: string;
+  name: string;
+  familyGroups: readonly FamilyGroupDraft[];
+}) {
+  const mine = familyGroups
+    .map((group, index) => ({ group, index }))
+    .filter(({ group }) => group.attendeeClientIds.includes(clientId));
+  const jump = (groupId: string) => {
+    const element = document.getElementById(fieldIds.familyGroup(groupId));
+    element?.scrollIntoView({ block: "center" });
+    element?.focus({ preventScroll: true });
+  };
+  if (mine.length === 0) {
+    return <p className="mt-3 text-sm text-white/80">{name} isn&apos;t on a family pass yet.</p>;
+  }
+  return (
+    <ul className="mt-3 space-y-1 text-sm">
+      {mine.map(({ group, index }) => (
+        <li key={group.id} className="flex flex-wrap items-center gap-x-3">
+          <span>
+            On family pass {index + 1} · {formatDay(group.date)}
+          </span>
+          <button
+            type="button"
+            onClick={() => jump(group.id)}
+            className="min-h-11 text-bright-gold underline-offset-4 hover:underline"
+          >
+            Edit pass {index + 1}
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }

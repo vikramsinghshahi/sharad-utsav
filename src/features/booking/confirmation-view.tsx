@@ -253,15 +253,18 @@ function ReceiptLine({
   line: BookingResponse["lines"][number];
   who: string | null;
 }) {
+  const detail = [
+    who,
+    line.date ? formatDay(line.date) : null,
+    line.qty > 1 ? `×${line.qty}` : null,
+  ]
+    .filter((part) => part !== null)
+    .join(" · ");
   return (
     <li className="flex justify-between gap-3">
       <span>
         {line.displayName}
-        <span className="text-primary-text">
-          {who ? ` · ${who}` : ""}
-          {line.date ? ` · ${formatDay(line.date)}` : ""}
-          {line.qty > 1 ? ` · ×${line.qty}` : ""}
-        </span>
+        {detail && <span className="block text-primary-text">{detail}</span>}
       </span>
       <Money cents={line.lineTotalCents} className="shrink-0" />
     </li>

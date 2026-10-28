@@ -50,6 +50,7 @@ export function PassesStep({ state, dispatch, catalog, quote, errorsFor }: StepP
                 ...errorsFor(fieldIds.entry(attendee.clientId)),
                 ...errorsFor(fieldIds.attendee(attendee.clientId)),
               ]}
+              familyGroups={state.familyGroups}
               warnings={
                 quoteNow?.warnings.filter(
                   (w) => w.path[0] === "attendees" && w.path[1] === index,
