@@ -19,8 +19,8 @@ export function DiyaIcon({ lit, current = false }: { lit: boolean; current?: boo
           lit
             ? "diya-flame fill-bright-gold"
             : current
-              ? "fill-bright-gold/10 stroke-bright-gold"
-              : "fill-none stroke-white/45"
+              ? "fill-bright-gold/10 stroke-gold-ink"
+              : "fill-none stroke-ink/45"
         }
         strokeWidth="1.2"
       />
@@ -32,7 +32,7 @@ export function DiyaIcon({ lit, current = false }: { lit: boolean; current?: boo
       )}
       <path
         d="M3.5 14.5h17c-.6 3.6-4 6-8.5 6s-7.9-2.4-8.5-6Z"
-        className={lit ? "fill-primary" : current ? "fill-primary/70" : "fill-white/25"}
+        className={lit ? "fill-primary" : current ? "fill-primary/70" : "fill-ink/25"}
       />
       <path d="M8 14.5h8" className="stroke-heading/40" strokeWidth="1" />
     </svg>

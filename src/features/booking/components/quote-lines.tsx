@@ -30,23 +30,23 @@ export function QuoteLines({ quote, catalog, state }: Props) {
     <div className="space-y-4">
       {groups.map((group) => (
         <section key={group.key} aria-label={group.title}>
-          <h4 className="text-sm font-semibold text-white">{group.title}</h4>
-          {group.subtitle && <p className="text-sm text-white/70">{group.subtitle}</p>}
-          <ul className="mt-1 divide-y divide-white/10">
+          <h4 className="text-sm font-semibold text-ink">{group.title}</h4>
+          {group.subtitle && <p className="text-sm text-ink/70">{group.subtitle}</p>}
+          <ul className="mt-1 divide-y divide-ink/10">
             {group.lines.map((line, index) => (
               <li key={`${line.productId}-${line.date ?? "x"}-${index}`} className="py-1.5 text-sm">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-white/85">
+                  <span className="text-ink/85">
                     {nameOf(line)}
-                    {line.date && <span className="text-white/70"> · {formatDay(line.date)}</span>}
+                    {line.date && <span className="text-ink/70"> · {formatDay(line.date)}</span>}
                     {line.qty > 1 && (
-                      <span className="text-white/70">
+                      <span className="text-ink/70">
                         {" "}
                         · {line.qty} × <Money cents={line.unitPriceCents} />
                       </span>
                     )}
                   </span>
-                  <Money cents={line.lineTotalCents} className="shrink-0 text-white" />
+                  <Money cents={line.lineTotalCents} className="shrink-0 text-ink" />
                 </div>
               </li>
             ))}
@@ -62,7 +62,7 @@ export function QuoteTotals({ quote }: { quote: QuoteResponse }) {
   return (
     <dl className="space-y-1 border-t border-line pt-3 text-sm">
       <div className="flex justify-between">
-        <dt className="text-white/80">Subtotal</dt>
+        <dt className="text-ink/80">Subtotal</dt>
         <dd>
           <Money cents={quote.subtotalCents} />
         </dd>
@@ -77,7 +77,7 @@ export function QuoteTotals({ quote }: { quote: QuoteResponse }) {
       )}
       <div className="flex items-baseline justify-between pt-1">
         <dt className="font-semibold">Total</dt>
-        <dd className="font-serif text-2xl font-semibold text-bright-gold">
+        <dd className="font-serif text-2xl font-semibold text-gold-ink">
           <Money cents={quote.totalCents} />
         </dd>
       </div>

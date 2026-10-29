@@ -60,7 +60,7 @@ export function ConfirmationView({ id, token }: { id: string; token: string }) {
     return (
       <Shell>
         <h1 className="font-serif text-4xl font-semibold">We couldn&apos;t find that booking</h1>
-        <p className="mt-3 text-white/85">
+        <p className="mt-3 text-ink/85">
           Check the link — it needs to be exactly as it was given after payment.
         </p>
         <Link href="/" className={`${secondaryButton} mt-6`}>
@@ -73,7 +73,7 @@ export function ConfirmationView({ id, token }: { id: string; token: string }) {
     return (
       <Shell>
         <h1 className="font-serif text-4xl font-semibold">We couldn&apos;t load your booking</h1>
-        <p className="mt-3 text-white/85">
+        <p className="mt-3 text-ink/85">
           {state.network ? "You seem to be offline." : "Something went wrong on our side."} Your
           booking is safe.
         </p>
@@ -97,7 +97,7 @@ export function ConfirmationView({ id, token }: { id: string; token: string }) {
             ? "Payment not finished yet"
             : "This booking isn't active"}
         </h1>
-        <p className="mt-3 text-white/85">
+        <p className="mt-3 text-ink/85">
           {booking.status === "pending_payment"
             ? "Your places are held, but the payment hasn't been completed. Go back to the booking tab to pay."
             : "The places for this booking were released. You're welcome to book again."}
@@ -116,9 +116,9 @@ export function ConfirmationView({ id, token }: { id: string; token: string }) {
           <DiyaIcon lit />
           <div>
             <h1 className="font-serif text-4xl leading-tight font-semibold">You&apos;re booked</h1>
-            <p className="text-white/85">
+            <p className="text-ink/85">
               Confirmation sent to{" "}
-              <span className="font-medium text-white">{booking.booker.email}</span>
+              <span className="font-medium text-ink">{booking.booker.email}</span>
             </p>
           </div>
         </div>
@@ -144,7 +144,7 @@ function Ticket({ booking, code }: { booking: BookingResponse; code: string }) {
   return (
     <article
       aria-label="Your ticket"
-      className="overflow-hidden rounded-3xl bg-cream text-heading shadow-[0_24px_60px_-30px_rgba(209,172,62,0.55)]"
+      className="overflow-hidden rounded-3xl border border-cream-edge bg-cream text-heading shadow-[0_24px_60px_-30px_rgba(209,172,62,0.55)]"
     >
       {/* Admit panel: code + QR for the door */}
       <div className="flex flex-col items-center gap-5 px-6 pt-7 pb-8 text-center sm:flex-row sm:items-center sm:text-left">

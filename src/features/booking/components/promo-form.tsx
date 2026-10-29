@@ -71,7 +71,7 @@ export function PromoForm({ applied, outcome, checking, dispatch }: Props) {
       }}
     >
       <label htmlFor={fieldIds.promo} className={label}>
-        Promo code <span className="font-normal text-white/70">(optional)</span>
+        Promo code <span className="font-normal text-ink/70">(optional)</span>
       </label>
       <div className="flex gap-2">
         <input
@@ -90,7 +90,7 @@ export function PromoForm({ applied, outcome, checking, dispatch }: Props) {
         </button>
       </div>
       <div id={resultId} aria-live="polite">
-        {checking && applied !== "" && <p className="text-sm text-white/75">Checking code…</p>}
+        {checking && applied !== "" && <p className="text-sm text-ink/75">Checking code…</p>}
         {message && (
           <Callout tone={message.tone}>
             <div className="flex items-center justify-between gap-3">

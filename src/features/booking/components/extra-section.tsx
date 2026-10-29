@@ -52,13 +52,13 @@ export function ExtraSection({ product, state, dispatch, errorsFor }: Props) {
         <h3 id={titleId} className="font-serif text-2xl font-semibold">
           {product.displayName}
         </h3>
-        <p className="text-sm tabular-nums text-bright-gold">
+        <p className="text-sm tabular-nums text-gold-ink">
           {priceLabel(product, currency)}
-          {stock && <span className="ml-2 text-white/85">· {stock}</span>}
+          {stock && <span className="ml-2 text-ink/85">· {stock}</span>}
         </p>
       </div>
       {rule.availableDates && (
-        <p className="mt-1 text-sm text-white/80">
+        <p className="mt-1 text-sm text-ink/80">
           Only on {rule.availableDates.map(formatDay).join(" and ")}.
           {rule.minAgeBand === "child" && " For ages 5 and over."}
         </p>
@@ -73,7 +73,7 @@ export function ExtraSection({ product, state, dispatch, errorsFor }: Props) {
           if (!info) return null;
           if (!bandAllows(info.band, rule.minAgeBand)) {
             return (
-              <li key={attendee.clientId} className="text-sm text-white/75">
+              <li key={attendee.clientId} className="text-sm text-ink/75">
                 {name} · not available for under-5s
               </li>
             );
@@ -86,7 +86,7 @@ export function ExtraSection({ product, state, dispatch, errorsFor }: Props) {
           const selected = row?.dates ?? [];
           if (days.length === 0) {
             return (
-              <li key={attendee.clientId} className="text-sm text-white/75">
+              <li key={attendee.clientId} className="text-sm text-ink/75">
                 {name} ·{" "}
                 {info.band === "infant"
                   ? "no adult from your group is coming on a day this runs"

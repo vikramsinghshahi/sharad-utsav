@@ -38,7 +38,7 @@ export function BookingFlow({ slug }: { slug: string }) {
     return (
       <Message title="We couldn't find that event">
         Please check the link, or go back to the{" "}
-        <Link href="/" className="text-bright-gold underline">
+        <Link href="/" className="text-gold-ink underline">
           home page
         </Link>
         .
@@ -49,7 +49,7 @@ export function BookingFlow({ slug }: { slug: string }) {
     return (
       <Message title="We couldn't load tickets">
         {catalogState.network ? "You seem to be offline. " : "Something went wrong on our side. "}
-        <button type="button" onClick={reload} className="text-bright-gold underline">
+        <button type="button" onClick={reload} className="text-gold-ink underline">
           Try again
         </button>
       </Message>
@@ -248,11 +248,11 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
           <div>
             <Link
               href="/"
-              className="font-serif text-2xl font-semibold text-primary hover:text-bright-gold"
+              className="font-serif text-2xl font-semibold text-gold-ink hover:text-gold-ink"
             >
               {catalog.event.name}
             </Link>
-            {catalog.event.venue && <p className="text-sm text-white/75">{catalog.event.venue}</p>}
+            {catalog.event.venue && <p className="text-sm text-ink/75">{catalog.event.venue}</p>}
           </div>
         </header>
 
@@ -261,7 +261,7 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
         <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,720px)_minmax(300px,1fr)] lg:items-start">
           <main className="min-w-0 space-y-5">
             <div>
-              <p className="text-sm text-bright-gold lg:hidden">
+              <p className="text-sm text-gold-ink lg:hidden">
                 Step {stepIndex + 1} of {STEPS.length}
               </p>
               <h2
@@ -323,7 +323,7 @@ function Flow({ slug, catalog, reloadCatalog }: FlowProps) {
                   <button
                     type="button"
                     onClick={() => goTo(STEPS[stepIndex - 1] ?? "who")}
-                    className="no-print text-sm text-white/80 underline-offset-4 hover:text-bright-gold hover:underline"
+                    className="no-print text-sm text-ink/80 underline-offset-4 hover:text-gold-ink hover:underline"
                   >
                     ← Back to {STEP_TITLES[STEPS[stepIndex - 1] ?? "who"]}
                   </button>
@@ -419,7 +419,7 @@ function Message({ title, children }: { title: string; children: React.ReactNode
   return (
     <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col justify-center px-4">
       <h1 className="font-serif text-4xl font-semibold">{title}</h1>
-      <p className="mt-3 text-white/85">{children}</p>
+      <p className="mt-3 text-ink/85">{children}</p>
     </main>
   );
 }

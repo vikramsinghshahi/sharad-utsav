@@ -30,7 +30,7 @@ export function HoldCountdown({ expiresAt, onExpire }: Props) {
   const urgent = remaining < 2 * 60 * 1000;
   return (
     <div
-      className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${urgent ? "border-bright-gold bg-bright-gold/10" : "border-line bg-surface"}`}
+      className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${urgent ? "border-gold-ink bg-bright-gold/10" : "border-line bg-surface"}`}
     >
       <p className="text-sm">
         Your places are held for
@@ -38,7 +38,7 @@ export function HoldCountdown({ expiresAt, onExpire }: Props) {
       </p>
       <p
         aria-hidden="true"
-        className="font-serif text-3xl font-semibold tabular-nums lining-nums text-bright-gold"
+        className="font-serif text-3xl font-semibold tabular-nums lining-nums text-gold-ink"
       >
         {formatCountdown(remaining)}
       </p>

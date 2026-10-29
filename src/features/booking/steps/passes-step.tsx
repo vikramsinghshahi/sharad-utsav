@@ -26,7 +26,7 @@ export function PassesStep({ state, dispatch, catalog, quote, errorsFor }: StepP
 
   return (
     <div className="space-y-6">
-      <p className="text-white/85">
+      <p className="text-ink/85">
         Choose a ticket for each person aged 5 and over. Only tickets that fit their age are shown.
       </p>
 
@@ -74,7 +74,7 @@ export function PassesStep({ state, dispatch, catalog, quote, errorsFor }: StepP
             {infants.map(({ attendee }) => (
               <li key={attendee.clientId} id={fieldIds.attendee(attendee.clientId)} tabIndex={-1}>
                 {attendeeName(attendee)}
-                <span className="text-white/75">
+                <span className="text-ink/75">
                   {infantDays.length > 0
                     ? ` · comes with your adults on ${formatDays(infantDays)}`
                     : ` · comes with an adult aged ${RESPONSIBLE_AGE}+ from your group`}

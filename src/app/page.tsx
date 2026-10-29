@@ -5,8 +5,8 @@ import { SITE } from "@/lib/site";
 export default function Home() {
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-      <h1 className="font-serif text-2xl font-semibold text-primary">{SITE.name}</h1>
-      <p className="mt-1 text-white/80">{SITE.description}</p>
+      <h1 className="font-serif text-2xl font-semibold text-gold-ink">{SITE.name}</h1>
+      <p className="mt-1 text-ink/80">{SITE.description}</p>
       <EventList />
     </main>
   );

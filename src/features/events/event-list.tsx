@@ -22,16 +22,16 @@ export function EventList() {
   }
   if (state.status === "error") {
     return (
-      <p role="alert" className="mt-10 text-white/85">
+      <p role="alert" className="mt-10 text-ink/85">
         {state.network ? "You seem to be offline. " : "We couldn't load events just now. "}
-        <button type="button" onClick={retry} className="text-bright-gold underline">
+        <button type="button" onClick={retry} className="text-gold-ink underline">
           Try again
         </button>
       </p>
     );
   }
   if (state.events.length === 0) {
-    return <p className="mt-10 text-white/85">There are no upcoming events right now.</p>;
+    return <p className="mt-10 text-ink/85">There are no upcoming events right now.</p>;
   }
   return (
     <ul className="mt-10 space-y-6">
@@ -57,7 +57,7 @@ function EventCard({ event }: { event: EventSummary }) {
         <DiyaIcon lit />
       </div>
       {event.venue && (
-        <p className="mt-5 text-sm font-medium tracking-[0.2em] text-bright-gold uppercase">
+        <p className="mt-5 text-sm font-medium tracking-[0.2em] text-gold-ink uppercase">
           {event.venue}
         </p>
       )}
@@ -67,10 +67,10 @@ function EventCard({ event }: { event: EventSummary }) {
       >
         {event.name}
       </h2>
-      <p className="mt-3 text-lg font-medium text-white lining-nums">
+      <p className="mt-3 text-lg font-medium text-ink lining-nums">
         {formatDateRange(event.firstDay, event.lastDay)}
       </p>
-      {event.tagline && <p className="mt-3 max-w-xl text-white/85">{event.tagline}</p>}
+      {event.tagline && <p className="mt-3 max-w-xl text-ink/85">{event.tagline}</p>}
 
       <div className="mt-7 flex flex-wrap items-center gap-4">
         <Link
@@ -80,9 +80,9 @@ function EventCard({ event }: { event: EventSummary }) {
           Book tickets
         </Link>
         {event.lowestEntryPriceCents !== null && (
-          <p className="text-sm text-white/80">
+          <p className="text-sm text-ink/80">
             Tickets from{" "}
-            <span className="font-semibold text-white tabular-nums">
+            <span className="font-semibold text-ink tabular-nums">
               {formatMoney(event.lowestEntryPriceCents, event.currency)}
             </span>
           </p>

@@ -18,14 +18,14 @@ export function NoticeList({ notices, onDismiss }: Props) {
               : "border-line bg-surface"
           }`}
         >
-          <span aria-hidden="true" className="mt-0.5 text-bright-gold">
+          <span aria-hidden="true" className="mt-0.5 text-gold-ink">
             {notice.tone === "warning" ? "!" : "i"}
           </span>
           <p className="flex-1">{notice.text}</p>
           <button
             type="button"
             onClick={() => onDismiss(notice.id)}
-            className="-m-1 rounded p-1 text-white/75 hover:text-white"
+            className="-m-1 rounded p-1 text-ink/75 hover:text-ink"
           >
             <span aria-hidden="true">✕</span>
             <span className="sr-only">Dismiss note</span>
