@@ -485,10 +485,9 @@ Indexes: `bookings(status, hold_expires_at)`, `inventory_holds(expires_at) WHERE
 
 ### 9.3 UX quality bar
 
-- Mobile-first, works one-handed at 360px wide. Keyboard-navigable. Visible focus rings in `gold-ink` (`#85600E`).
-- **Theme:** light, a warm ivory page (`#FBF7F0`) with white cards and dark brown ink (`#2B1D0E`). The brand golds are too pale for text on a light ground, so gold text, selected borders and focus rings use `gold-ink`; `#C99B24` and `#D1AC3E` are fills only. *(Changed from the original dark `#2C2C2C` theme at the user's request.)*
-- **Contrast:** **Never** use white text on a gold button (≈ 2.6:1, fails): use `#291900` (heading) on gold (≈ 6.6:1). Check every pair with a contrast checker.
-- Cards: white fill, a faint ink border (`rgb(43 29 14 / 0.14)`) and a small shadow on the ivory page. Serif headings (e.g. Cormorant / Playfair) with Inter body text.
+- Mobile-first, works one-handed at 360px wide. Keyboard-navigable. Visible focus rings in `brightGold`.
+- **Contrast:** gold `#C99B24` on `#2C2C2C` is ≈ 5.4:1, which passes AA for text. **Never** use white text on a gold button (≈ 2.6:1, fails): use `#291900` (heading) on gold (≈ 6.6:1). Check every pair with a contrast checker.
+- Cards: `rgba(255,255,255,0.05)` fill and `rgba(255,255,255,0.2)` border on the dark background. Serif headings (e.g. Cormorant / Playfair) with Inter body text.
 - Every async state is designed: loading skeletons, empty group, sold out, offline banner (`navigator.onLine` plus fetch failure), hold expired → "Your places were released — re-check availability".
 - Errors are helpful, not scolding: "Aarav is 7 on 10 Nov, so he needs a child ticket ($8/day)."
 
@@ -563,7 +562,7 @@ Speed check: by the **end of Day 2**, P0–P2 must be done, meaning the API is c
 
 ### P3 — Booking UI (3.5h)
 
-- [ ] Theme tokens in Tailwind config; fonts; base layout (light ivory background, white cards, cream ticket).
+- [ ] Theme tokens in Tailwind config; fonts; base layout (dark background, cream cards).
 - [ ] `features/booking/reducer.ts` + types + cascade logic (unit-test the reducer too).
 - [ ] Step 1 Who's coming → Step 2 Passes → Step 3 Extras → Step 4 Review/promo → Step 5 Pay → Step 6 Confirmation.
 - [ ] Quote hook: debounced, abortable, shows server totals and suggestions.

@@ -33,7 +33,7 @@ export function DayPicker({
       aria-describedby={describedBy}
       aria-invalid={invalid || undefined}
     >
-      <legend className="mb-2 text-sm text-ink/80">{legend}</legend>
+      <legend className="mb-2 text-sm text-white/80">{legend}</legend>
       <div className="grid max-w-sm grid-cols-5 gap-1.5 sm:gap-2">
         {options.map((option) => {
           const on = selected.includes(option.date);
@@ -49,16 +49,16 @@ export function DayPicker({
               aria-label={`${formatDay(option.date)}${off && option.note ? `, ${option.note}` : ""}`}
               className={`flex min-h-11 min-w-0 flex-col items-center justify-center rounded-xl border px-3 py-1.5 leading-tight transition-colors ${
                 on
-                  ? "border-gold-ink bg-bright-gold text-heading"
-                  : "border-line-strong text-ink hover:border-gold-ink"
-              } disabled:cursor-not-allowed disabled:border-ink/15 disabled:text-ink/70`}
+                  ? "border-bright-gold bg-bright-gold text-heading"
+                  : "border-line-strong text-white hover:border-bright-gold"
+              } disabled:cursor-not-allowed disabled:border-white/15 disabled:text-white/60`}
             >
               <span className="text-xs">{weekday}</span>
               <span className={`text-base font-semibold tabular-nums ${off ? "line-through" : ""}`}>
                 {day}
               </span>
               {off && option.note && (
-                <span className="text-xs font-medium text-ink/80">{option.note}</span>
+                <span className="text-xs font-medium text-white/80">{option.note}</span>
               )}
             </button>
           );

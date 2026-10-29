@@ -11,7 +11,7 @@ interface Props {
 export function QuantityStepper({ id, label, value, max, onChange, describedBy }: Props) {
   const set = (next: number) => onChange(Math.min(max, Math.max(0, Math.floor(next))));
   const button =
-    "flex size-11 items-center justify-center rounded-xl border border-line-strong text-xl hover:border-gold-ink disabled:cursor-not-allowed disabled:opacity-50";
+    "flex size-11 items-center justify-center rounded-xl border border-line-strong text-xl hover:border-bright-gold disabled:cursor-not-allowed disabled:opacity-50";
   return (
     <div className="flex items-center gap-2">
       <button
@@ -33,7 +33,7 @@ export function QuantityStepper({ id, label, value, max, onChange, describedBy }
         aria-label={label}
         aria-describedby={describedBy}
         onChange={(event) => set(Number(event.target.value || 0))}
-        className="h-11 w-16 rounded-xl border border-line-strong bg-surface text-center text-lg tabular-nums"
+        className="h-11 w-16 rounded-xl border border-line-strong bg-white/5 text-center text-lg tabular-nums"
       />
       <button
         type="button"

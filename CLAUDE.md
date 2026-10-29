@@ -150,7 +150,7 @@ No hard-coded event facts (P4):
 - Messages (`contracts/messages.ts`) are built only from the issue's `params` and those constants. If a message needs a new fact, add it to the issue's params in the domain, not to the copy.
 - Money and dates are formatted only by `contracts/format.ts` (shared by API messages and UI), always with the event's currency.
 - Site-wide identity is `src/lib/site.ts` (`NEXT_PUBLIC_SITE_NAME`, `NEXT_PUBLIC_SITE_DESCRIPTION`). The landing page lists events from `GET /api/events`; no slug is written anywhere in `src/`.
-- Colour: every text/background pair is checked by `tests/ui/contrast.test.ts` against the tokens in `globals.css`. The theme is light: text is `ink` (secondary text `ink/70`–`ink/90`), the page is `page`, cards are `surface`. Gold text, selected borders and focus rings use `gold-ink`; `primary` and `bright-gold` are fills only; never white text on gold. Use these tokens, never `text-white` or raw hex in components. Add any new pair you introduce to that test.
+- Colour: every text/background pair is checked by `tests/ui/contrast.test.ts` against the tokens in `globals.css`. Gold text on cards or tints uses `bright-gold` (plain `primary` only directly on the page); never white text on gold. Add any new pair you introduce to that test.
 
 Design rules (SOLID as applied here):
 

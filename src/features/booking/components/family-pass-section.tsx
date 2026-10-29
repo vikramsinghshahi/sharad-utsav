@@ -49,7 +49,7 @@ export function FamilyPassSection({ product, catalog, state, dispatch, errorsFor
         <h3 id="family-passes-title" className="font-serif text-2xl font-semibold">
           Family passes
         </h3>
-        <p className="mt-1 text-sm text-ink/80">
+        <p className="mt-1 text-sm text-white/80">
           One {product.displayName} (<Money cents={product.priceCents} />) covers one day for 1–
           {maxAdults} adults ({BAND_RANGE.adult}) and up to {maxChildren} children (
           {BAND_RANGE.child}). Coming on more than one day? Add a pass for each day.
@@ -57,7 +57,7 @@ export function FamilyPassSection({ product, catalog, state, dispatch, errorsFor
       </div>
 
       {state.familyGroups.length === 0 && (
-        <p className="rounded-xl border border-dashed border-line-strong p-4 text-sm text-ink/75">
+        <p className="rounded-xl border border-dashed border-line-strong p-4 text-sm text-white/75">
           No family passes yet. Choose “{product.displayName}” for a person above, or add one here.
         </p>
       )}
@@ -109,7 +109,12 @@ export function FamilyPassSection({ product, catalog, state, dispatch, errorsFor
                   }
                 >
                   {catalog.days.map((d) => (
-                    <option key={d.date} value={d.date} disabled={!d.onSale} className="bg-page">
+                    <option
+                      key={d.date}
+                      value={d.date}
+                      disabled={!d.onSale}
+                      className="bg-primary-dark"
+                    >
                       {formatDay(d.date)}
                       {d.onSale ? "" : " (closed)"}
                     </option>
@@ -118,9 +123,9 @@ export function FamilyPassSection({ product, catalog, state, dispatch, errorsFor
               </div>
 
               <fieldset className="mt-3">
-                <legend className="text-sm text-ink/80">Who does this pass cover?</legend>
+                <legend className="text-sm text-white/80">Who does this pass cover?</legend>
                 {people.length === 0 ? (
-                  <p className="mt-2 text-sm text-ink/75">
+                  <p className="mt-2 text-sm text-white/75">
                     Add people with a date of birth in step 1 first.
                   </p>
                 ) : (
@@ -141,7 +146,9 @@ export function FamilyPassSection({ product, catalog, state, dispatch, errorsFor
                           <label
                             htmlFor={id}
                             className={`flex min-h-11 items-center gap-3 rounded-xl border px-3 py-2 ${
-                              checked ? "border-gold-ink bg-bright-gold/10" : "border-line-strong"
+                              checked
+                                ? "border-bright-gold bg-bright-gold/10"
+                                : "border-line-strong"
                             } ${disabled ? "opacity-60" : "cursor-pointer"}`}
                           >
                             <input
@@ -149,7 +156,7 @@ export function FamilyPassSection({ product, catalog, state, dispatch, errorsFor
                               type="checkbox"
                               checked={checked}
                               disabled={disabled}
-                              className="size-4 accent-gold-ink"
+                              className="size-4 accent-bright-gold"
                               onChange={(event) =>
                                 dispatch({
                                   type: "SET_FAMILY_GROUP",
@@ -161,7 +168,7 @@ export function FamilyPassSection({ product, catalog, state, dispatch, errorsFor
                             />
                             <span className="flex-1 text-sm">
                               {attendeeName(attendee)}
-                              <span className="block text-ink/70">
+                              <span className="block text-white/70">
                                 {band === "adult" ? "Adult" : "Child"}
                                 {otherSameDay
                                   ? " · already on a pass this day"
@@ -178,7 +185,7 @@ export function FamilyPassSection({ product, catalog, state, dispatch, errorsFor
                 )}
               </fieldset>
 
-              <p className={`mt-3 text-sm ${ok ? "text-success-text" : "text-ink/80"}`}>
+              <p className={`mt-3 text-sm ${ok ? "text-success-text" : "text-white/80"}`}>
                 {adults} of {maxAdults} adults · {children} of {maxChildren} children
                 {ok ? " ✓" : adults === 0 ? " · needs at least 1 adult" : ""}
               </p>

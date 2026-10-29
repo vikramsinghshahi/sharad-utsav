@@ -72,11 +72,11 @@ export function PayStep(props: Props) {
           >
             Payment
           </h3>
-          <p className="mt-1 text-sm text-ink/80">
+          <p className="mt-1 text-sm text-white/80">
             Booking for {booker.firstName} {booker.lastName} · confirmation goes to {booker.email}
           </p>
-          <p className="mt-4 text-sm text-ink/80">Amount to pay</p>
-          <p className="font-serif text-4xl font-semibold text-gold-ink">
+          <p className="mt-4 text-sm text-white/80">Amount to pay</p>
+          <p className="font-serif text-4xl font-semibold text-bright-gold">
             <Money cents={hold.totalCents} />
           </p>
 
@@ -104,7 +104,7 @@ export function PayStep(props: Props) {
             )}
           </div>
 
-          <p className="mt-4 text-sm text-ink/75">
+          <p className="mt-4 text-sm text-white/75">
             This is a demonstration: no card is needed and no money moves.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -143,7 +143,7 @@ export function PayStep(props: Props) {
 
   return (
     <div className="space-y-4">
-      <p className="text-ink/85">
+      <p className="text-white/85">
         The person paying must be {RESPONSIBLE_AGE} or over. We&apos;ll send the confirmation to
         this email.
       </p>
@@ -219,7 +219,7 @@ export function PayStep(props: Props) {
             <input
               id={attendingId}
               type="checkbox"
-              className="size-5 accent-gold-ink"
+              className="size-5 accent-bright-gold"
               checked={booker.isAttending}
               aria-invalid={attendingErrors.length > 0 || undefined}
               aria-describedby={attendingErrors.length > 0 ? errorIdFor(attendingId) : undefined}

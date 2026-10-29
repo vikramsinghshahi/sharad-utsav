@@ -12,19 +12,17 @@
   --color-success: #28a736;
   --color-error: #ef1f1f;
 
-  /* Light theme: a warm ivory page with white cards, dark brown ink and gold accents.
-     Every text/background pair below is checked by tests/ui/contrast.test.ts. */
-  --color-page: #fbf7f0;
-  --color-ink: #2b1d0e; /* body text; also used at /90–/70 for secondary text */
-  --color-gold-ink: #85600e; /* gold text, selected borders and focus ring (bright gold is too pale on light) */
-  --color-error-text: #b42318;
-  --color-success-text: #1d7330;
+  /* Text tints that pass 4.5:1 on the dark ground and on cards (error #EF1F1F is
+     only ~3.3:1 there, success #28A736 ~4.4:1: keep those for icons and borders). */
+  --color-error-text: #ff8f87; /* 6.3:1 on #2C2C2C, 5.4:1 on a card */
+  --color-success-text: #5fd068; /* 7.1:1 on #2C2C2C, 6.1:1 on a card */
   --color-cream-edge: #eadcc4; /* tear line / stub on the cream ticket */
 
-  --color-surface: #ffffff;
-  --color-surface-raised: #fffdf8;
-  --color-line: rgb(43 29 14 / 0.14);
-  --color-line-strong: rgb(43 29 14 / 0.5); /* ≥ 3:1 for input and chip borders */
+  /* Card surfaces from the brief: translucent white on the dark ground. */
+  --color-surface: rgb(255 255 255 / 0.05);
+  --color-surface-raised: rgb(255 255 255 / 0.08);
+  --color-line: rgb(255 255 255 / 0.2);
+  --color-line-strong: rgb(255 255 255 / 0.4); /* ≥ 3:1 for input and chip borders */
 
   --font-serif: var(--font-cormorant);
   --font-sans: var(--font-inter);
@@ -45,16 +43,16 @@
 }
 
 body {
-  background: var(--color-page);
-  color: var(--color-ink);
+  background: var(--color-primary-dark);
+  color: #ffffff;
   font-family: var(--font-inter), system-ui, sans-serif;
 }
 
 @layer base {
-  /* Visible focus everywhere, in gold (SPEC §9.3). In the base layer so a
+  /* Visible focus everywhere, in bright gold (SPEC §9.3). In the base layer so a
      utility can opt out, e.g. a heading that only takes focus programmatically. */
   :focus-visible {
-    outline: 2px solid var(--color-gold-ink);
+    outline: 2px solid var(--color-bright-gold);
     outline-offset: 3px;
   }
 
@@ -66,9 +64,9 @@ body {
     font-variant-numeric: lining-nums;
   }
 
-  /* Native date pickers and selects in the light scheme. */
-  :root {
-    color-scheme: light;
+  /* Native date pickers on the dark ground. */
+  input[type="date"] {
+    color-scheme: dark;
   }
 }
 
@@ -146,7 +144,7 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--color-page);
+  background: var(--color-primary-dark);
   transform: translateY(-50%);
 }
 .ticket-notch::before {

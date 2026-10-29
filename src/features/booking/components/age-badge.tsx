@@ -13,7 +13,7 @@ export function AgeBadge({ info }: { info: AgeInfo | null }) {
       className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium tabular-nums ${
         info.band === "infant"
           ? "border-success/70 text-success-text"
-          : "border-bright-gold/60 text-gold-ink"
+          : "border-bright-gold/60 text-bright-gold"
       }`}
     >
       {text}

@@ -17,7 +17,7 @@ export function ExtrasStep({ state, dispatch, catalog, errorsFor }: StepProps) {
 
   return (
     <div className="space-y-5">
-      <p className="text-ink/85">
+      <p className="text-white/85">
         All optional. Each person can add extras on the days they&apos;re coming. Under-5s can have
         dinner on the days an adult from your group comes.
       </p>
@@ -51,9 +51,11 @@ export function ExtrasStep({ state, dispatch, catalog, errorsFor }: StepProps) {
               <h3 id={`${fieldId}-title`} className="font-serif text-2xl font-semibold">
                 {product.displayName}
               </h3>
-              <p className="text-sm tabular-nums text-gold-ink">{priceLabel(product, currency)}</p>
+              <p className="text-sm tabular-nums text-bright-gold">
+                {priceLabel(product, currency)}
+              </p>
             </div>
-            <p id={hintId} className="mt-1 text-sm text-ink/80">
+            <p id={hintId} className="mt-1 text-sm text-white/80">
               For the whole group, up to {product.rule.maxPerBooking ?? max} per booking.
               {product.soldOut
                 ? " Sold out."

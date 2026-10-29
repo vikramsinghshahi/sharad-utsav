@@ -36,7 +36,7 @@ export function WhoStep({ state, dispatch, catalog, today, errorsFor }: StepProp
 
   return (
     <div className="space-y-4">
-      <p className="text-ink/85">
+      <p className="text-white/85">
         Add everyone who is coming, including little ones. Ages are as of {formatDay(firstDay)}, the
         first day.
       </p>
@@ -45,7 +45,7 @@ export function WhoStep({ state, dispatch, catalog, today, errorsFor }: StepProp
         <div className="flex flex-col items-center rounded-2xl border border-dashed border-line-strong px-6 py-10 text-center">
           <DiyaIcon lit={false} current />
           <p className="mt-3 font-serif text-xl">Nobody added yet</p>
-          <p className="mt-1 max-w-sm text-sm text-ink/75">
+          <p className="mt-1 max-w-sm text-sm text-white/75">
             Start with yourself or whoever is coming. Under-5s come free, but please add them so our
             volunteers know who to expect.
           </p>
@@ -84,7 +84,7 @@ export function WhoStep({ state, dispatch, catalog, today, errorsFor }: StepProp
             >
               + Add another person
             </button>
-            <p className="text-sm text-ink/75" aria-live="polite">
+            <p className="text-sm text-white/75" aria-live="polite">
               {full
                 ? `That's the limit of ${MAX_ATTENDEES} people per booking. For larger groups, please contact the temple.`
                 : `${count} of ${MAX_ATTENDEES} people`}

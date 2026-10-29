@@ -27,7 +27,7 @@ export function Stepper({ current, furthest, onGo }: Props) {
               <li key={step} className="flex flex-1 items-center gap-1">
                 <span
                   aria-hidden="true"
-                  className={`h-0.5 flex-1 rounded-full ${index <= currentIndex ? "bg-bright-gold" : "bg-ink/10"}`}
+                  className={`h-0.5 flex-1 rounded-full ${index <= currentIndex ? "bg-bright-gold" : "bg-white/20"}`}
                 />
                 {reachable ? (
                   <button
@@ -63,8 +63,8 @@ export function Stepper({ current, furthest, onGo }: Props) {
             <>
               <DiyaIcon lit={done} current={isCurrent} />
               <span className="flex flex-col text-left leading-tight">
-                <span className="text-xs text-ink/70">Step {index + 1}</span>
-                <span className={isCurrent ? "font-semibold text-ink" : "text-ink/85"}>
+                <span className="text-xs text-white/70">Step {index + 1}</span>
+                <span className={isCurrent ? "font-semibold text-white" : "text-white/85"}>
                   {STEP_TITLES[step]}
                 </span>
               </span>
@@ -73,13 +73,13 @@ export function Stepper({ current, furthest, onGo }: Props) {
           return (
             <li
               key={step}
-              className={`flex-1 border-b-2 pb-3 ${isCurrent ? "border-gold-ink" : done ? "border-primary/60" : "border-ink/15"}`}
+              className={`flex-1 border-b-2 pb-3 ${isCurrent ? "border-bright-gold" : done ? "border-primary/60" : "border-white/15"}`}
             >
               {index <= furthestIndex && !isCurrent ? (
                 <button
                   type="button"
                   onClick={() => onGo(step)}
-                  className="flex items-center gap-3 rounded-md text-sm transition-colors hover:text-gold-ink"
+                  className="flex items-center gap-3 rounded-md text-sm transition-colors hover:text-bright-gold"
                 >
                   {label}
                   <span className="sr-only">{goLabel(index)}</span>

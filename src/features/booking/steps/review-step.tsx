@@ -78,11 +78,11 @@ export function ReviewStep({ state, dispatch, catalog, quote }: StepProps) {
               </div>
             </div>
           ) : quote.status === "invalid" ? (
-            <p className="text-sm text-ink/80">
+            <p className="text-sm text-white/80">
               We&apos;ll show the total once the points above are sorted out.
             </p>
           ) : quote.status === "error" ? (
-            <p className="text-sm text-ink/80">We couldn&apos;t get prices just now.</p>
+            <p className="text-sm text-white/80">We couldn&apos;t get prices just now.</p>
           ) : (
             <div className="space-y-2">
               <Skeleton className="h-4 w-3/4" />

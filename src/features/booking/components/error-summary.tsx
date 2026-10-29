@@ -56,7 +56,7 @@ export function ErrorSummary({ items, onSelect, focusRequest = 0, fallbackFocusI
       aria-labelledby="error-summary-title"
       className="rise-in rounded-2xl border border-error bg-error/10 p-4"
     >
-      <h3 id="error-summary-title" className="font-semibold text-ink">
+      <h3 id="error-summary-title" className="font-semibold text-white">
         {count === 1 ? "One thing needs attention" : `${count} things need attention`}
       </h3>
       <ul className="mt-2 space-y-1.5 text-sm">
@@ -71,7 +71,7 @@ export function ErrorSummary({ items, onSelect, focusRequest = 0, fallbackFocusI
                 event.preventDefault();
                 if (!onSelect?.(item)) focusField(item.fieldId);
               }}
-              className="text-error-text underline underline-offset-2 hover:text-ink"
+              className="text-error-text underline underline-offset-2 hover:text-white"
             >
               {item.message}
             </a>
@@ -79,7 +79,7 @@ export function ErrorSummary({ items, onSelect, focusRequest = 0, fallbackFocusI
               <button
                 type="button"
                 onClick={() => applyFix(item)}
-                className="min-h-11 rounded-lg border border-line-strong px-3 py-1.5 font-medium text-ink hover:border-gold-ink hover:text-gold-ink"
+                className="min-h-11 rounded-lg border border-line-strong px-3 py-1.5 font-medium text-white hover:border-bright-gold hover:text-bright-gold"
               >
                 {item.fixLabel}
               </button>

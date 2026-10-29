@@ -72,7 +72,9 @@ export function EntryPicker({
       <label
         htmlFor={id}
         className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
-          checked ? "border-gold-ink bg-bright-gold/10" : "border-line-strong hover:border-ink/60"
+          checked
+            ? "border-bright-gold bg-bright-gold/10"
+            : "border-line-strong hover:border-white/60"
         } ${disabledReason ? "cursor-not-allowed opacity-70" : ""}`}
       >
         <input
@@ -82,14 +84,14 @@ export function EntryPicker({
           checked={checked}
           disabled={disabledReason !== null}
           onChange={onSelect}
-          className="mt-1 size-4 accent-gold-ink"
+          className="mt-1 size-4 accent-bright-gold"
         />
         <span className="flex-1">
           <span className="flex flex-wrap items-baseline justify-between gap-x-3">
             <span className="font-medium">{title}</span>
-            <span className="text-sm text-gold-ink tabular-nums">{price}</span>
+            <span className="text-sm text-bright-gold tabular-nums">{price}</span>
           </span>
-          <span className="block text-sm text-ink/75">{disabledReason ?? detail}</span>
+          <span className="block text-sm text-white/75">{disabledReason ?? detail}</span>
         </span>
       </label>
     );
@@ -220,7 +222,7 @@ function FamilyMembership({
     element?.focus({ preventScroll: true });
   };
   if (mine.length === 0) {
-    return <p className="mt-3 text-sm text-ink/80">{name} isn&apos;t on a family pass yet.</p>;
+    return <p className="mt-3 text-sm text-white/80">{name} isn&apos;t on a family pass yet.</p>;
   }
   return (
     <ul className="mt-3 space-y-1 text-sm">
@@ -232,7 +234,7 @@ function FamilyMembership({
           <button
             type="button"
             onClick={() => jump(group.id)}
-            className="min-h-11 text-gold-ink underline-offset-4 hover:underline"
+            className="min-h-11 text-bright-gold underline-offset-4 hover:underline"
           >
             Edit pass {index + 1}
           </button>

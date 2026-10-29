@@ -66,20 +66,20 @@ export function StickySummary({
       </p>
 
       {/* Phone bottom bar */}
-      <div className="no-print fixed inset-x-0 bottom-0 z-20 border-t border-line bg-page/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm lg:hidden">
+      <div className="no-print fixed inset-x-0 bottom-0 z-20 border-t border-line bg-primary-dark/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm lg:hidden">
         <div className="mx-auto flex max-w-xl items-center gap-4">
           <div className="min-w-24" aria-busy={updating || undefined}>
-            <p className="text-sm text-ink/75">Total</p>
+            <p className="text-sm text-white/75">Total</p>
             {shown ? (
               <p
-                className={`font-serif text-2xl leading-tight font-semibold text-gold-ink transition-opacity ${updating ? "opacity-60" : ""}`}
+                className={`font-serif text-2xl leading-tight font-semibold text-bright-gold transition-opacity ${updating ? "opacity-60" : ""}`}
               >
                 <Money cents={shown.totalCents} />
               </p>
             ) : quote.status === "loading" ? (
               <Skeleton className="mt-1 h-6 w-20" />
             ) : (
-              <p className="font-serif text-2xl leading-tight text-ink/70">—</p>
+              <p className="font-serif text-2xl leading-tight text-white/70">—</p>
             )}
           </div>
           <div className="flex-1">{button}</div>
@@ -94,7 +94,7 @@ export function StickySummary({
         <h2 className="font-serif text-2xl font-semibold">Your booking</h2>
         <div className="mt-4 max-h-[50vh] overflow-y-auto pr-1" aria-busy={updating || undefined}>
           {quote.status === "idle" && (
-            <p className="text-sm text-ink/75">Add the people who are coming to see prices.</p>
+            <p className="text-sm text-white/75">Add the people who are coming to see prices.</p>
           )}
           {quote.status === "loading" && !shown && (
             <div className="space-y-2">
@@ -104,20 +104,20 @@ export function StickySummary({
             </div>
           )}
           {quote.status === "invalid" && (
-            <p className="text-sm text-ink/75">
+            <p className="text-sm text-white/75">
               Prices appear here as soon as everyone has a ticket that fits the rules.
             </p>
           )}
           {quote.status === "error" && (
             <div className="space-y-2 text-sm">
-              <p className="text-ink/80">We couldn&apos;t get prices just now.</p>
-              <button type="button" onClick={onRetryQuote} className="text-gold-ink underline">
+              <p className="text-white/80">We couldn&apos;t get prices just now.</p>
+              <button type="button" onClick={onRetryQuote} className="text-bright-gold underline">
                 Try again
               </button>
             </div>
           )}
           {shown && totalsOnly && (
-            <p className="text-sm text-ink/75">The full breakdown is on the left.</p>
+            <p className="text-sm text-white/75">The full breakdown is on the left.</p>
           )}
           {shown && !totalsOnly && (
             <div className={`transition-opacity ${updating ? "opacity-60" : ""}`}>
@@ -132,12 +132,12 @@ export function StickySummary({
         ) : (
           <div className="mt-4 flex items-baseline justify-between border-t border-line pt-3">
             <span className="font-semibold">Total</span>
-            <span className="font-serif text-2xl text-ink/70">—</span>
+            <span className="font-serif text-2xl text-white/70">—</span>
           </div>
         )}
-        {updating && <p className="mt-1 text-xs text-ink/70">Updating prices…</p>}
+        {updating && <p className="mt-1 text-xs text-white/70">Updating prices…</p>}
         {button && <div className="mt-4">{button}</div>}
-        <p className="mt-3 text-xs leading-relaxed text-ink/70">
+        <p className="mt-3 text-xs leading-relaxed text-white/70">
           Prices are worked out by the temple&apos;s booking system. No fees or taxes.
         </p>
       </aside>
